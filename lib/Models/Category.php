@@ -5,13 +5,12 @@ namespace Scayle\StorefrontApi\Models;
 /**
  * @property int $id Unique identifier of the category.
  * @property Category $parent Parent category, if existent and requested, using `with`.
- * @property CategoryChild[] $children Array of child category objects, if requested, using `with`.
+ * @property Category[] $children Array of child category objects, if requested, using `with`.
 The childrenIds are always included.Array of child category objects, if requested, using with.
 The `childrenIds` are always included.
 
  * @property int[] $childrenIds child category IDs attached to the current category
  * @property int $depth nesting level of the category (root-level depth = 1, child nodes = 2, child nodes' children = 3, etc.)
- * @property string $description Short text about the category.
  * @property bool $isHidden The category should not be shown in the front end if this is set to `true`.
  * @property string $name the name of the category
  * @property int $parentId parent category ID (root-level categories have a parent ID of `0`)

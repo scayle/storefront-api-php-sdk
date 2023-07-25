@@ -13,6 +13,7 @@ namespace Scayle\StorefrontApi\Models;
  * @property string $logoHash Logo hash used for generating the full url.
  * @property Timestamp $createdAt Date string of creation, formatted according to RFC 3339.
  * @property Timestamp $updatedAt Date string of last update, formatted according to RFC 3339.
+ * @property Timestamp $indexedAt Date string of last update, formatted according to RFC 3339.
  */
 class Brand extends ApiObject
 {

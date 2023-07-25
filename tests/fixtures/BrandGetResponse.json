@@ -8,7 +8,8 @@
             "isActive": true,
             "logoHash": "01dfae6e5d4d90d9892622325959afbe",
             "createdAt": "2019-04-17 16:05:36",
-            "updatedAt": "2019-04-17 16:05:36"
+            "updatedAt": "2019-04-17 16:05:36",
+            "indexedAt": "2023-04-26 16:05:36"
         },
         {
             "id": 22,
@@ -19,7 +20,8 @@
             "isActive": true,
             "logoHash": "8743b52063cd84097a65d1633f5c74f5",
             "createdAt": "2019-04-17 16:05:36",
-            "updatedAt": "2019-04-17 16:05:36"
+            "updatedAt": "2019-04-17 16:05:36",
+            "indexedAt": "2023-04-26 16:05:36"
         }
     ],
     "pagination": {
