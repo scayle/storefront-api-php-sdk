@@ -26,6 +26,7 @@ namespace Scayle\StorefrontApi\Models;
  * @property Variant[] $variants 
  * @property Timestamp $createdAt 
  * @property Timestamp $updatedAt 
+ * @property Timestamp $indexedAt 
  */
 class Product extends ApiObject
 {
