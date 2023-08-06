@@ -1,0 +1,52 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "pipeline" && $API_COMMIT_SHA
+    - if: $CI_PIPELINE_SOURCE == "web" && $API_COMMIT_SHA
+
+default:
+  image: docker:20
+  services:
+    - name: docker:dind
+      command: ["--tls=false"]
+  tags:
+    - ay-shared-runner
+  before_script:
+    # Configure docker to also use our auth config for building the docker image
+    # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#option-3-use-docker_auth_config
+    - mkdir -p $HOME/.docker
+    - echo $DOCKER_AUTH_CONFIG > $HOME/.docker/config.json
+
+    - apk add --no-cache curl git
+
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker pull $CI_REGISTRY/aboutyou/scayle/core-engine/storefront-unit/storefront-api/sdks/generator:latest
+
+stages:
+  - build
+
+Build SDK:
+  stage: build
+  script:
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/aboutyou/scayle/core-engine/storefront-unit/storefront-api/storefront-api.git .api
+    - cd .api
+    - git checkout $API_COMMIT_SHA
+    - cd ..
+
+    - echo "Initializing Git"
+    - git config user.name $SDK_AUTOMATION_USER
+    - git config user.email $SDK_AUTOMATION_EMAIL
+    - git remote set-url origin https://$SDK_AUTOMATION_USER:$SDK_AUTOMATION_TOKEN@gitlab.com/${CI_PROJECT_PATH}.git
+
+    - git checkout -b chore/update-sdk-$API_COMMIT_SHA
+
+    - cp .api/http/docs/swagger.yaml swagger.yaml
+    - docker run 
+        --rm 
+        -v "$(pwd)":/gen/out/php
+        -v "$(pwd)/swagger.yaml":/gen/swagger.yaml 
+        $CI_REGISTRY/aboutyou/scayle/core-engine/storefront-unit/storefront-api/sdks/generator:latest
+        php ./src/CodeGen.php generate php-storefront swagger.yaml
+
+    - git add .
+    - 'git commit -m "chore: Upgrade to $API_COMMIT_SHA"'
+    - git push -o merge_request.create --set-upstream origin chore/update-sdk-$API_COMMIT_SHA
