@@ -1,0 +1,4455 @@
+openapi: 3.0.3
+info:
+  description: |
+    The SCAYLE Storefront API is a highly scalable REST API to access your product data in any customer-facing application.
+
+    You can use the SCAYLE Storefront API to:
+    * fetch your product data to be displayed anywhere
+    * filter products by numerous filter criteria
+    * search for products (full-text search)
+    * save baskets or wishlists for individual customers
+    * retrieve shop configuration
+
+    [Resource Center](https://scayle.dev/) | [SCAYLE Commerce Engine](https://www.scayle.com/)
+
+    ---
+    # Core Concepts
+
+    Core concepts of the Storefront API are:
+    * **Variant**: Any distinct sellable item, for example: a blue colored shirt in size L. Available quantity/stock information is always on variant level.
+    * **Product**: A product is a collection of one or more variants with some shared attributes, for example: A blue colored shirt (product) available in different sizes (variants). A product will be sold out when all its variants are sold out.
+    * **Sibling**: A product closely related to another product, for example, the same shirt by the same brand, but in another color.
+    * **Category**: Each product can be assigned to one or more category nodes in the category tree.
+    * **Attribute**: Attributes are, for example, size, material, color. Attributes can be assigned to product level or variant level.
+    * **Filter**: Any criteria available to filter a list of products, for example: an attribute or a category.
+    * **Basket**: The basket holds variants that a customer intends to buy and has added to his shopping cart.
+    * **Wishlist**: Customers can add variants to a wishlist to remember them or buy them later.
+
+    # General API Information
+
+    ## Content Type
+    All API responses are returned with `Content-Type: application/json`.
+
+    ## Multiple Shops
+    In case you are operating multiple shops (for example, for different domain names or different languages), each shop is identified by its specific `shopId` or `countryId`.
+
+    For all requests, the `shopId` or `countryId` can be provided as:
+    * HTTP header `X-Shop-Id` or `X-Country-Id`, for example: `X-Shop-Id: 123` or `X-Country-Id: 123`
+    * GET parameter `shopId` or `countryId`, for example `/v1/products?shopId=123` or `/v1/products?countryId=123`
+
+    ## Authentication
+    For protected endpoints of the Storefront API, please provide the access token in the HTTP header `X-Access-Token`.
+
+    The access tokens are managed and retrieved from the Scayle Panel in the [API Keys](../../../en/next/manual/scayle/api-keys) section. The tokens for the Storefront API are the ones specified in the section *Storefront API Keys*.
+
+    Below, you can see a CURL request example using a generic token. Please __replace it with your token collected from the SCAYLE Panel__ as described in the previous section.
+
+    e.g:
+    ```json
+    curl -X GET \
+      http://your-domain.com/v1/products
+      -H 'Content-Type: application/json' \
+      -H 'X-Access-Token: 434kdgkajdsfgjkajd13477asfadf123asdfasdfadad'
+    ```
+    __Note:__ After the token is generated in the Panel, it can take some time for changes to take effect.
+
+  version: "will-be-replaced-by-app-config"
+  title: Storefront API Documentation
+servers:
+  - description: Current Environment
+    url: ''
+tags:
+  - name: default
+    description: General API endpoints
+  - name: products
+    description: Get products
+  - name: variants
+    description: Get product variants
+  - name: campaigns
+    description: Get campaigns available per shop
+  - name: categories
+    description: Get categories
+  - name: attributes
+    description: Get attributes
+  - name: search
+    description: Get matching attributes, brands, categories, products
+  - name: filters
+    description: Get filters
+  - name: baskets
+    description: Manage baskets
+  - name: wishlists
+    description: Manage wishlists
+  - name: shop-configuration
+    description: Manage the shop configuration
+  - name: navigation
+    description: Manage navigation
+  - name: brands
+    description: Manage brands
+paths:
+  '/v1/variants':
+    get:
+      tags:
+        - variants
+      summary: Display a list of variants
+      description: |
+        Get multiple variants, either by specifying search criteria/filters or variant IDs.
+
+        There are two basic ways to use this endpoint: You can either search for variants by specifying search/filter parameters or directly fetch known variants by their [variant IDs](../../../en/glossary#variant-id).
+
+        ***
+
+        __Searching for variants__
+
+        The various `filter` parameters can be used to restrict the list of variants included in the response (see available parameters below).
+
+        You can also use the `/v1/filters` endpoint to determine which filters are available in the current context. This way, you can, for example, enable users to narrow down general variant lists to very specific results by incrementally adding more and more filter parameters.
+
+        The `minProductId`, `includeSellableForFree`, and `includeSoldOut` parameters can further restrict or expand the search results (see below).
+
+        ***
+
+        __Fetching variants by variant ID__
+
+        To fetch a list of known variants, simply specify them by variant ID using the `ids` parameter, for example, `/v1/variants?ids=1,2,3`.
+
+        If you specify the `ids` parameter, all other search/filter parameters will be ignored.
+
+        ***
+
+        __Selecting included variant data__
+
+        By default, only basic variant data is included in the response. Use the `with` parameters (see below) to include more variant data.
+
+        To see all available variant data, for example, for debugging, you might use unrestricted `with` parameters: `?with=attributes,advancedAttributes`.
+
+        Beware of using unrestricted `with` parameters in production applications. It will result in slow performance, as download sizes for full variant data lists can be quite big. Including only exactly what is needed will be best for performance when downloading and parsing the result.
+
+        A typical request for a variant list optimized for maximum performance is, for example, `?with=attributes:key(ean|shopSize),advancedAttributes:key(modelHeight)`.
+      operationId: fetch-variants
+      parameters:
+        - $ref: '#/components/parameters/variantIds'
+        - $ref: '#/components/parameters/campaignKey'
+        - $ref: '#/components/parameters/includeSellableForFree'
+        - $ref: '#/components/parameters/includeSoldOut'
+        - $ref: '#/components/parameters/minProductId'
+        - $ref: '#/components/parameters/sortingKey'
+        - $ref: '#/components/parameters/filterAttributeId'
+        - $ref: '#/components/parameters/filterAttributeKey'
+        - $ref: '#/components/parameters/orFiltersOperator'
+        - $ref: '#/components/parameters/filterCategory'
+        - $ref: '#/components/parameters/filterEan'
+        - $ref: '#/components/parameters/filterIsnew'
+        - $ref: '#/components/parameters/filterMaxPrice'
+        - $ref: '#/components/parameters/filterMaxReduction'
+        - $ref: '#/components/parameters/filterMinPrice'
+        - $ref: '#/components/parameters/filterMinReduction'
+        - $ref: '#/components/parameters/filterReferenceKey'
+        - $ref: '#/components/parameters/filterSale'
+        - $ref: '#/components/parameters/filterStyleKey'
+        - $ref: '#/components/parameters/filterTerm'
+        - $ref: '#/components/parameters/filterMerchantId'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/sortDir'
+        - name: hideSoldOutVariants
+          in: query
+          description: Only return results with available stock quantity (`stock > 0`).
+          required: false
+          explode: false
+          schema:
+            type: boolean
+            default: false
+        - name: greaterThan
+          in: query
+          description: Only return results with an available stock quantity greater than or equal to the specified `greaterThan` quantity.
+          required: false
+          explode: false
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/variantsWith'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/perPage'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Variant'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          description: authentication failed
+  /v1/variants/{variantId}:
+    get:
+      tags:
+        - variants
+      summary: Get one variant by variantId
+      description: Get one variant by variant ID.
+      operationId: fetch-variant-by-id
+      parameters:
+        - name: variantId
+          in: path
+          description: Get variant with specified `variantId`.
+          required: true
+          explode: false
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/campaignKey'
+        - $ref: '#/components/parameters/variantsWith'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variant'
+        '401':
+          description: authentication failed
+        '404':
+          description: variant not found
+  /v1/variants/{variantId}/stocks:
+    get:
+      tags:
+        - variants
+      summary: Fetch stock information
+      description: Fetch stock information for a variant.
+      operationId: fetch-variant-stocks
+      parameters:
+        - name: variantId
+          in: path
+          description: Get stock information for variant with specified `variantId`.
+          required: true
+          explode: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Stock'
+        '401':
+          description: authentication failed
+        '404':
+          description: variant not found
+  /v1/products:
+    get:
+      tags:
+        - products
+      summary: Display a list of products
+      description: |
+        Requesting this API endpoint is the main way to retrieve your product data to display in any context. It will probably be your most used API request.
+
+        There are two basic ways to use the endpoint: You can either search for products by specifying search/filter parameters or directly fetch known products by their product IDs.
+
+        When you just query `/v1/products` without any parameter, you will be shown a list of the latest 100 products, sorted by their product ID (highest product ID first).
+
+        ***
+
+        __Searching for products__
+
+        The various `filter` parameters can be used to restrict the list of products included in the response (see available parameters below).
+
+        You can also use the `/v1/filters` endpoint to determine which filters are available in the current context. This way, you can, for example, enable users to narrow down general product lists to very specific results by incrementally adding more and more filter parameters.
+
+        The `minProductId`, `includeSellableForFree`, and `includeSoldOut` parameters can further restrict or expand the search results (see below).
+
+        ***
+
+        __Fetching products by product ID__
+
+        To fetch a list of known products, simply specify them by product ID using the `ids` parameter, for example, `/v1/products?ids=1,2,3`.
+
+        If you specify the `ids` parameter, all other search/filter parameters will be ignored.
+
+        ***
+
+        __Selecting included product data__
+
+        By default, only basic product data is included in the response. Use the `with` parameters (see below) to include more product data.
+
+        To see all available product data, for example, for debugging, you might use unrestricted `with` parameters: `?with=attributes,advancedAttributes,categories,images.attributes,priceRange,reductionRange,siblings,variants.attributes,variants.advancedAttributes`.
+
+        Beware of using these unrestricted `with` parameters in production applications. It will result in slow performance, as download sizes for full product data lists can be quite big. Including only exactly what is needed will be best for performance when downloading and parsing the result.
+
+        A typical request for a product list optimized for maximum performance is, for example, `?with=attributes:key(brand|color),advancedAttributes:key(description),variants.attributes:key(vendorSize),images,priceRange,reductionRange`.
+
+        ***
+
+        __Sorting__
+
+        You can order the results using different sorting strategies, based on the provided `sort`, `sortingKey`, and `sortDir` parameters.
+
+        * __Default sorting__: If no sorting parameter is specified, the products will be sorted by product ID. To specify the order, use the `sortDir` parameter (default `desc`, highest product ID first).
+
+        * __Price sorting__: `sort=price` will sort the results by price. To specify the order, use the `sortDir` parameter (default `desc`, highest price first).
+
+        * __Reduction sorting__: `sort=reduction` will sort the results by price reduction. This sorting is based on the available `appliedReductions` for each product's variants. When a `campaignKey` is also provided, the sorting will also consider the campaign reduction. To specify the order, use the `sortDir` parameter (default `desc`, highest reduction first).
+
+        * __Date sorting__: `sort=new` will order the products by `firstLiveAt` field. If `firstLiveAt` is not set the products will be ordered by creation date. To specify the order, use the `sortDir` parameter (default `desc`, most recent date first).
+
+        * __Key sorting__: `sortingKey` will order the results based on your custom sorting keys, for example, `sortingKey=wcc-default`. If the `sortingKey` parameter has been provided, the `sort` parameter will be ignored.
+      operationId: fetch-products
+      parameters:
+        - $ref: '#/components/parameters/productIds'
+        - $ref: '#/components/parameters/boostAttributes'
+        - $ref: '#/components/parameters/boostValues'
+        - $ref: '#/components/parameters/campaignKey'
+        - $ref: '#/components/parameters/containsSearch'
+        - $ref: '#/components/parameters/includeSellableForFree'
+        - $ref: '#/components/parameters/includeSoldOut'
+        - $ref: '#/components/parameters/referenceKey'
+        - $ref: '#/components/parameters/pricePromotionKey'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/sortDir'
+        - $ref: '#/components/parameters/sortingKey'
+        - $ref: '#/components/parameters/filterAttributeId'
+        - $ref: '#/components/parameters/filterAttributeKey'
+        - $ref: '#/components/parameters/negativeFilterAttributeKey'
+        - $ref: '#/components/parameters/orFiltersOperator'
+        - $ref: '#/components/parameters/filterCategory'
+        - $ref: '#/components/parameters/filterCategoryPath'
+        - $ref: '#/components/parameters/filterEan'
+        - $ref: '#/components/parameters/filterIsnew'
+        - $ref: '#/components/parameters/filterMaxPrice'
+        - $ref: '#/components/parameters/filterMaxReduction'
+        - $ref: '#/components/parameters/filterMinPrice'
+        - $ref: '#/components/parameters/filterMinReduction'
+        - $ref: '#/components/parameters/filterReferenceKey'
+        - $ref: '#/components/parameters/filterSale'
+        - $ref: '#/components/parameters/filterStyleKey'
+        - $ref: '#/components/parameters/filterTerm'
+        - $ref: '#/components/parameters/filterMinFirstLiveAt'
+        - $ref: '#/components/parameters/filterMaxFirstLiveAt'
+        - $ref: '#/components/parameters/filterMerchantId'
+        - $ref: '#/components/parameters/filterHasCampaignReduction'
+        - $ref: '#/components/parameters/productsWith'
+        - $ref: '#/components/parameters/minProductId'
+        - $ref: '#/components/parameters/disableFuzziness'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/perPage'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+                  pagination:
+                    oneOf:
+                      - $ref: '#/components/schemas/Pagination'
+                      - $ref: '#/components/schemas/OffsetPagination'
+        '400':
+          description: required query parameter missing / invalid
+        '401':
+          description: authentication failed
+  /v1/products/{productId}:
+    get:
+      tags:
+        - products
+      summary: Get one product by productId
+      description: Get one product by product ID.
+      operationId: fetch-product-by-id
+      parameters:
+        - name: productId
+          in: path
+          description: Get product with specified `productId`.
+          required: true
+          explode: false
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/campaignKey'
+        - $ref: '#/components/parameters/productsWith'
+        - $ref: '#/components/parameters/pricePromotionKey'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: required query parameter missing / invalid
+        '401':
+          description: authentication failed
+  /v1/categories:
+    get:
+      tags:
+        - categories
+      summary: Get information about categories
+      description: |
+        Each product can be assigned to one or more shop categories in a hierarchical shop category tree.
+        You can set up and [modify your shop-specific category tree](../../../en/next/manual/scayle/categories) through the SCAYLE Panel.
+
+        You can use `/categories?ids=123,456,789` to retrieve additional information about multiple categories.
+
+        Category information includes:
+
+        * `childrenIds`: child category IDs attached to the current category
+        * `parentId`: parent category ID (root-level categories have a parent ID of `0`)
+        * `depth`: nesting level of the category (root-level depth = 1, child nodes = 2, child nodes' children = 3, etc.)
+        * `rootlineIds`: a list containing the current category ID and all parent IDs up to the root category level (depth 1).
+        * `slug`: short text to describe the current category (usable, for example, in URLs as `fashion`).
+        * `path`: slugs for all `rootlineIds` combined with `/` (e.g., `/women/fashion`).
+        * `supportedFilter`: a list of filters that can be used for filtering products in the category (for example, `armLength` or `mainMaterial`).
+
+        You can also get individual categories with `/v1/categories/{categoryId}` or `/v1/categories/{categoryPath}`.
+      operationId: fetch-categories
+      parameters:
+        - name: ids
+          in: query
+          description: Only include results with `categoryId` matching one of the specified `ìds`, for example, `ids=123,456,789.`
+          required: false
+          explode: false
+          schema:
+            type: array
+            items:
+              type: integer
+        - $ref: '#/components/parameters/categoriesFormat'
+        - $ref: '#/components/parameters/categoriesShowHidden'
+        - $ref: '#/components/parameters/categoriesDepth'
+        - $ref: '#/components/parameters/categoriesWith'
+        - $ref: '#/components/parameters/locale'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+        '400':
+          description: required query parameter missing / invalid
+        '401':
+          description: authentication failed
+  /v1/categories/{categoryId}:
+    get:
+      tags:
+        - categories
+      summary: Get category information by categoryId
+      description: |
+        Get category information for the specified category ID, for example, `/v1/categories/20204`.
+      operationId: fetch-category-by-id
+      parameters:
+        - name: categoryId
+          in: path
+          description: Category ID
+          required: true
+          explode: false
+          schema:
+            type: integer
+            example: 20201
+        - $ref: '#/components/parameters/categoriesFormat'
+        - $ref: '#/components/parameters/categoriesShowHidden'
+        - $ref: '#/components/parameters/categoriesDepth'
+        - $ref: '#/components/parameters/categoriesWith'
+        - $ref: '#/components/parameters/locale'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: required query parameter missing / invalid
+        '404':
+          description: categories not found
+        '401':
+          description: authentication failed
+  /v1/categories/{categoryPath}:
+    get:
+      tags:
+        - categories
+      summary: Get category information by `categoryPath`
+      description: |
+        Get category information for the specified category path, for example, `/v1/categories/frauen/bekleidung`.
+
+        Note: It is recommended to implement fetching category by an Id instead of by a Path, as this approach offers several advantages in terms of performance, consistency, and reduced error likelihood.
+      operationId: fetch-category-by-path
+      parameters:
+        - name: categoryPath
+          in: path
+          description: Get category with specified `categoryPath`.
+          required: true
+          explode: false
+          schema:
+            type: string
+            example: frauen/bekleidung/kleider
+        - $ref: '#/components/parameters/categoriesFormat'
+        - $ref: '#/components/parameters/categoriesShowHidden'
+        - $ref: '#/components/parameters/categoriesDepth'
+        - $ref: '#/components/parameters/categoriesWith'
+        - $ref: '#/components/parameters/locale'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: required query parameter missing / invalid
+        '404':
+          description: categories not found
+        '401':
+          description: authentication failed
+  /v1/attributes:
+    get:
+      tags:
+        - attributes
+      summary: Get information about attributes
+      description: |
+        To work with attributes, we distinguish between __attribute groups__ and __attribute values__:
+        * Each product can be assigned to many __attribute values__, for example: `white` or `M`.
+        * Each attribute belongs to exactly one __attribute group__, for example: `color` or `size`.
+
+        When generally talking about attributes, both [attribute groups](../../../en/next/manual/scayle/product-configuration#definition-of-attributes--attribute-groups) and attribute values are sometimes referred to as just __attributes__. To avoid confusion when addressing technical details, use the more specific terms __attribute groups__ and __attribute values__.
+
+        You can set up and [modify your available attribute groups](../../../en/next/manual/scayle/product-configuration#master-attributes) and values through the Panel.
+
+        You can use `/attributes` to retrieve all your attribute groups. The response will also include the available attribute values for each attribute group.
+
+        To get only a few attribute groups, you can specify their attribute group IDs or their attribute group names, for example, `/attributes?ids=123,456,789` or `/attributes?name=color`.
+
+        You can also get individual attribute groups and their attribute values with `/v1/attributes/{attributeGroupName}`.
+      operationId: fetch-attributes
+      parameters:
+        - name: names
+          in: query
+          description: Only include attributes groups matching one of the specified `names`. Also returns all of that attribute group's values.
+          required: false
+          explode: false
+          schema:
+            type: string
+            example: brand
+        - name: ids
+          in: query
+          description: Only include attribute groups matching one of the specified `ids`. Also returns all of that attribute group's values.
+          required: false
+          explode: false
+          schema:
+            type: integer
+            example: 42
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attribute'
+        '400':
+          description: required query parameter missing / invalid
+        '401':
+          description: authentication failed
+        '404':
+          description: one of the requested attributes was not found.
+  /v1/attributes/{groupName}:
+    get:
+      tags:
+        - attributes
+      summary: Get attribute information by attributeGroupName
+      description: Get attribute group specified by `groupName`. The response will also include the available attribute values for the attribute group.
+      operationId: fetch-attribute-by-key
+      parameters:
+        - name: groupName
+          in: path
+          description: Get attribute with specified `groupName`.
+          required: true
+          explode: false
+          schema:
+            type: string
+            example: brand
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attribute'
+        '400':
+          description: required query parameter missing / invalid
+        '401':
+          description: authentication failed
+        '404':
+          description: requested attribute was not found
+  /v1/search/suggestions:
+    get:
+      tags:
+        - search
+      summary: Display matching brands, categories, products, productNames
+      description: |
+        This endpoint provides simple matches for full-text searches. For any given search term, it will suggest matching brands, categories, products, and productNames.
+
+        Unlike the `/search/mappings` endpoint, these suggestions are unrelated to each other: When searching for `about you shirt`, it will suggest the brand `about you` and the category `shirts`, even if there are no products in the category `shirts` with the brand `about you`.
+      operationId: fetch-suggestions
+      parameters:
+        - name: term
+          in: query
+          description: The `term` parameter allows you to query for any entity with a full or partial match with the given term.
+          required: true
+          explode: false
+          schema:
+            type: string
+        - name: with
+          in: query
+          description: Include only these types (brands is always included).
+          required: true
+          explode: false
+          schema:
+            type: string
+            enum:
+              - categories
+              - products
+              - productNames
+              - brands
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  brands:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AttributeValue'
+                  categories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+                  productNames:
+                    type: array
+                    items:
+                      type: string
+                      example:
+                        - "T-Shirt"
+                  products:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+        '401':
+          description: authentication failed
+  /v1/search/mappings:
+    get:
+      tags:
+        - search
+      summary: Display matching combinations of attributes and categories
+      description: |
+        This endpoint is intended to improve the experience for your users when doing full-text searches.
+
+        For example, when searching for `blue shirts M`, you might want to suggest to the user to visit the category `shirts`, filtered by the color attribute `blue` and the size attribute `M`.
+
+        This endpoint helps you provide that, as it will search for matching combinations of attributes and categories. It will only include combinations that actually provide search results.
+
+        For example, while searching for `blue shirts M`, the category `shirts` filtered by `blue` would not be included, if there are no blue shirts available.
+
+        Still, the category `shirts` filtered by size attribute `M` would be included (ignoring `blue` because there would be no matching results).
+
+        The request needs to match at least one category and one attribute. For example, searching for `blue M` would return no result at all (as it matches no category) and not suggest category `shirts` filtered by `blue` and `M`.
+      operationId: fetch-search-mappings
+      parameters:
+        - name: term
+          in: query
+          description: The search term to match attributes and categories.
+          required: true
+          explode: false
+          schema:
+            type: string
+            example: blue pants
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matches:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Match'
+        '401':
+          description: authentication failed
+  /v1/campaigns:
+    get:
+      tags:
+        - campaigns
+      summary: Get all campaigns
+      description: |
+        Show all campaigns available for the shop
+      operationId: fetch-campaigns
+      parameters:
+        - name: sort
+          in: query
+          description: |
+            Sort results by specified `sort` type. When no sort is specified, results will be sorted by `campaignId`.
+          required: false
+          explode: false
+          schema:
+            type: string
+            enum:
+              - id
+              - reduction
+              - start_at
+              - end_at
+        - name: sortDir
+          in: query
+          description: Sort results in the specified direction (`asc` for ascending or `desc` for descending).
+          required: false
+          explode: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: page
+          in: query
+          description: Return results for `page` (for example, `page=2`).
+          required: false
+          explode: false
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          description: Return `perPage` results per page (for example, `perPage=25`).
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  entities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Campaign'
+  /v1/campaigns/{campaignId}:
+    get:
+      tags:
+        - campaigns
+      summary: Return a single campaign
+      description: |
+        Show all campaigns available for the shop
+      operationId: fetch-campaign-by-id
+      parameters:
+        - name: campaignId
+          in: path
+          description: Campaign id
+          required: true
+          explode: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          description: "It was not possible possible to find the campaign"
+  /v1/search/resolve:
+    get:
+      tags:
+        - search
+      summary: Resolves the best match based on categories and attributes
+      description: |
+        This endpoint is intended to provide one best match.
+
+        The request needs to match at least one category and one attribute.
+        For example, searching for `Hosen schwarz Unifarben useless` would return category `Hosen`
+        that have two attributes: `schwarz` and `Unifarben`. The `Useless` will be discarded.
+      operationId: fetch-search-resolve
+      parameters:
+        - name: term
+          in: query
+          description: The search term to match attributes and categories.
+          required: true
+          explode: false
+          schema:
+            type: string
+            example: Hosen schwarz
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matches:
+                    items:
+                      type: object
+                      $ref: '#/components/schemas/ResolveMatch'
+        '401':
+          description: authentication failed
+        '400':
+          description: term not provided
+  /v1/typeahead:
+    get:
+      tags:
+        - search
+      summary: Get brands, categories, and products that best match the search term
+      description: |
+        The endpoint searches and returns:
+        - brands by their name
+        - categories by their name or their synonyms
+        - products by their name, brand, and attributes (or attribute synonyms)
+
+        When there is an exact one-to-one match present in the results, it is placed under the `topMatch` property. The rest of the results are sorted by relevancy and placed under the `suggestions` property. Sorting gives more weight to categories and brands, so products are generally placed below categories and brands.
+
+        The suggestions array has two types of objects:
+        - `BrandOrCategory` object, which is either a brand or category. Whether it is a brand or category can be identified by the property `primaryMatch`. The brand suggestions will also include the most relevant category under the `category` property.
+        - product object
+
+        When the search term finds a matching attribute, the attribute is then applied as a filter to the brand and category searches, adjusting the product count. Applied filters can be found under the `attributeFilters` property.
+
+        **Please use the `?fullAttributeValue=true` parameter for all searches**. The old response that returns only attribute IDs is deprecated. The response will default to full attribute values in the future.
+
+        **Note:** The typeahead endpoint supports both POST and GET requests, the difference is that the POST endpoint supports more parameters.
+
+      operationId: fetch-typeahead-suggestions-get
+      parameters:
+        - name: term
+          in: query
+          description: The `term` parameter specifies the search term.
+          required: true
+          explode: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: The `limit` parameter allows limiting the number of suggested products returned.
+          required: false
+          schema:
+            type: integer
+        - name: fullAttributeValue
+          in: query
+          description: |
+            Changes the values within the `attributeFilters` array to following format: `{"id": 1, "name": "schwarz"}`
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: with
+          in: query
+          description: |
+            The `with` parameter can be applied to include related resources, for example, the attributes of a product can be attached using `with=product.attributes`. It is also possible to filter product attributes by key `with=product.attributes:key(plusSize)` or by type `with=product.attributes:type(material_care)`. Nested includes can also be attached when available `with=product.variants.attributes` and multiple combinations are likewise accepted `with=prodcut.siblings,product.variants,category.children`. When using `with=category.children`, you can provide `categoryDepth` parameter to increase child depth. In the following table, there is more information about possible includes.
+            Include | includes | Available Filters
+            ------------ | ------------- | -------------
+            `product.attributes` | | `key`, `type`
+            `product.advancedAttributes` | | `key`, `type`
+            `product.variants` | See available includes for variants at variants endpoint |
+            `product.images` (default) | `images.attributes` |
+            `product.categories` |  | `hidden(true)`
+            `product.definingAttributes` |  |
+            `product.siblings` |  |
+            `product.priceRange` |  |
+            `product.reductionRange` |  |
+            `product.lowestPriorPrice` |  |
+            `product.searchCategoryIds` |  |
+            `product.baseCategories` |  |
+            `category.parents` |  |
+            `category.children` |  |
+            `category.properties:name(property_name)` | |
+          required: false
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: categoryDepth
+          in: query
+          description: Defines the number of nested child categories to include in the response.
+          required: false
+          schema:
+            type: integer
+            example: 3
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        brandOrCategorySuggestion:
+                          $ref: '#/components/schemas/BrandOrCategorySuggestion'
+                        score:
+                          type: number
+                          example: 52.762222
+                        type:
+                          type: string
+                          example: "brandOrCategory"
+                  topMatch:
+                    type: object
+                    nullable: true
+                    properties:
+                      brandOrCategorySuggestion:
+                        $ref: '#/components/schemas/BrandOrCategorySuggestion'
+                      score:
+                        type: number
+                        example: 52.762222
+                      type:
+                        type: string
+                        example: "brandOrCategory"
+        '401':
+          description: authentication failed
+    post:
+      tags:
+        - search
+      summary: Get brands, categories, and products that best match the search term
+      description:  |
+        The endpoint searches and returns:
+        - brands by their name
+        - categories by their name or their synonyms
+        - products by their name, brand, and attributes (or attribute synonyms)
+
+        When there is an exact one-to-one match present in the results, it is placed under the `topMatch` property. The rest of the results are sorted by relevancy and placed under the `suggestions` property. Sorting gives more weight to categories and brands, so products are generally placed below categories and brands.
+
+        The suggestions array has two types of objects:
+        - `BrandOrCategory` object, which is either a brand or category. Whether it is a brand or category can be identified by the property `primaryMatch`. The brand suggestions will also include the most relevant category under the `category` property.
+        - product object
+
+        When the search term finds a matching attribute, the attribute is then applied as a filter to the brand and category searches, adjusting the product count. Applied filters can be found under the `attributeFilters` property.
+
+        **Please use the `?fullAttributeValue=true` parameter for all searches**. The old response that returns only attribute IDs is deprecated. The response will default to full attribute values in the future.
+
+        **Note:** The typeahead endpoint supports both POST and GET requests. The difference is that the POST endpoint supports more parameters.
+
+      operationId: fetch-typeahead-suggestions-post
+      parameters:
+        - name: term
+          in: query
+          description: The `term` parameter specifies the search term.
+          required: true
+          explode: false
+          schema:
+            type: string
+        - name: fullAttributeValue
+          in: query
+          description: |
+            Changes the values within the `attributeFilters` array to following format: `{"id": 1, "name": "schwarz"}`
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: limit
+          in: query
+          description: The `limit` parameter allows limiting the number of suggested products returned.
+          required: false
+          schema:
+            type: integer
+        - name: with
+          in: query
+          description: |
+            The `with` parameter can be applied to include related resources, for example, the attributes of a product can be attached using `with=product.attributes`. It is also possible to filter product attributes by key `with=product.attributes:key(plusSize)` or by type `with=product.attributes:type(material_care)`. Nested includes can also be attached when available `with=product.variants.attributes` and multiple combinations are likewise accepted `with=prodcut.siblings,product.variants,category.children`. When using `with=category.children`, you can provide `categoryDepth` parameter to increase child depth. In the following table, there is more information about possible includes
+            Include | includes | Available Filters
+            ------------ | ------------- | -------------
+            `product.attributes` | | `key`, `type`
+            `product.advancedAttributes` | | `key`, `type`
+            `product.variants` | See available includes for variants at variants endpoint |
+            `product.images` (default) | `images.attributes` |
+            `product.categories` |  | `hidden(true)`
+            `product.definingAttributes` |  |
+            `product.siblings` |  |
+            `product.priceRange` |  |
+            `product.reductionRange` |  |
+            `product.lowestPriorPrice` |  |
+            `product.searchCategoryIds` |  |
+            `product.baseCategories` |  |
+            `category.parents` |  |
+            `category.children` |  |
+            `category.properties:name(property_name)` | |
+          required: false
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: categoryDepth
+          in: query
+          description: Defines the number of nested child categories to include in the response.
+          required: false
+          schema:
+            type: integer
+            example: 3
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fuzziness:
+                  description: "The fuzziness parameter can enable some typo tolerance. Available values are 0, 1, 2, and auto. Defaults to auto. Note: The value set in the SCAYLE Panel will not impact this search."
+                  type: string
+                  enum:
+                    - 0
+                    - 1
+                    - 2
+                    - auto
+                categoryId:
+                  type: integer
+                  description: The `categoryId` parameter can filter by category ID.
+                  example: 20201
+                limit:
+                  type: integer
+                  description: The `limit` parameter allows limiting the number of suggested products returned.
+                  example: 10
+                term:
+                  type: string
+                  description: The `term` parameter allows you to query for any entity with a full or partial match with the given term.
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        brandOrCategorySuggestion:
+                          $ref: '#/components/schemas/BrandOrCategorySuggestion'
+                        score:
+                          type: number
+                          example: 52.762222
+                        type:
+                          type: string
+                          example: "brandOrCategory"
+                  topMatch:
+                    type: object
+                    nullable: true
+                    properties:
+                      brandOrCategorySuggestion:
+                        $ref: '#/components/schemas/BrandOrCategorySuggestion'
+                      score:
+                        type: number
+                        example: 66.48743
+                      type:
+                        type: string
+                        example: "brandOrCategory"
+        '401':
+          description: authentication failed
+  /v1/filters:
+    get:
+      tags:
+        - filters
+      summary: Display a list of available filters for filtering products
+      description: |
+        Filters should always be used whenever you want to display or reduce a list of products based on specific criteria. Therefore, we will now explain which filters are available and what you need to keep in mind when using this endpoint.
+        * When you do not add extra parameters, you will be shown a list of default filters.
+        * During the initial configuration, we will set up a list of default filters with you for your specific needs.
+        * You can also [configure filters for each category](../../../en/next/manual/scayle/search-products#product-filters) through the Panel.
+        * When adding the `with=values` parameter, the response will include the resulting product counts for the combination of the filters used.
+
+        As an example, the following request: `/v1/filters?filters[category]=235870)&filters[sale]=true` will restrict the response to include only the available filter values and product counts for a specific category for products on sale.
+        In the next section, all the available filters will be described in detail.
+
+
+        __Note__: Inactive products (sold out) are always automatically filtered out from the filter's response, and they are not taken into account for any of the described filters below.
+      operationId: fetch-filters
+      parameters:
+        - $ref: '#/components/parameters/containsSearch'
+        - $ref: '#/components/parameters/filterCategory'
+        - $ref: '#/components/parameters/filterEan'
+        - $ref: '#/components/parameters/filterTerm'
+        - $ref: '#/components/parameters/disableFuzziness'
+        - $ref: '#/components/parameters/filterIsnew'
+        - $ref: '#/components/parameters/filterMinPrice'
+        - $ref: '#/components/parameters/filterMaxPrice'
+        - $ref: '#/components/parameters/filterSale'
+        - $ref: '#/components/parameters/filterAttributeKey'
+        - $ref: '#/components/parameters/negativeFilterAttributeKey'
+        - $ref: '#/components/parameters/orFiltersOperator'
+        - $ref: '#/components/parameters/filterAttributeId'
+        - $ref: '#/components/parameters/filterStyleKey'
+        - $ref: '#/components/parameters/filterReferenceKey'
+        - $ref: '#/components/parameters/filterMerchantId'
+        - $ref: '#/components/parameters/filterHasCampaignReduction'
+        - $ref: '#/components/parameters/campaignKey'
+        - $ref: '#/components/parameters/includeSoldOut'
+        - name: with
+          in: query
+          description: |
+            The `with` parameter can also include related resources of a filter in the response.
+            * By calling `with=values`, the parameter will include the available filter values and product counts for each filter.
+            * The `with=category_ids` will include the category filter (if available).
+          required: false
+          explode: false
+          schema:
+            type: array
+            example: [values]
+            items:
+              type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Filter'
+  /v1/filters/{groupName}/values:
+    get:
+      tags:
+        - filters
+      summary: Diplay the filter values and the product counts for a determined filter.
+      description: |
+        Retrieve the filter values and product counts for a specific `filterGroup`, for example: `/v1/filters/sale/values?filters[category]=20201` will show how many products in the category "20201" are in sale and how many are not in sale.
+
+
+        At the moment, only a few filters are available in this endpoint, namely: `sale`, `categoryids`, `savings`, `prices`, `brands`, and `isnew`.
+      operationId: fetch-filter-by-group
+      parameters:
+        - name: groupName
+          in: path
+          description: Group Name
+          required: true
+          explode: false
+          schema:
+            type: string
+            example: prices
+            enum:
+              - sale
+              - categoryids
+              - savings
+              - prices
+              - brands
+              - isnew
+        - $ref: '#/components/parameters/filterCategory'
+        - $ref: '#/components/parameters/filterTerm'
+        - $ref: '#/components/parameters/disableFuzziness'
+        - $ref: '#/components/parameters/filterMinPrice'
+        - $ref: '#/components/parameters/filterMaxPrice'
+        - $ref: '#/components/parameters/filterIsnew'
+        - $ref: '#/components/parameters/filterAttributeKey'
+        - $ref: '#/components/parameters/negativeFilterAttributeKey'
+        - $ref: '#/components/parameters/filterAttributeId'
+        - $ref: '#/components/parameters/campaignKey'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/AttributeFilterValue'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/BooleanFilterValue'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/RangeFilterValue'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/IdentifierFilterValue'
+  /v1/baskets/{basketId}:
+    get:
+      tags:
+        - baskets
+      summary: Retrieve a basket
+      description: |
+        This endpoint allows you to retrieve items previously added to an individual customer's basket, for example, `/v1/baskets/<your-basket-key>`.
+
+        Baskets are created on demand when a variant is [added to the basket](#/baskets/add-basket-item).
+
+        Using the `with` parameter, it is possible to retrieve extra information in the response (see parameters below).
+      operationId: fetch-basket-by-key
+      parameters:
+        - $ref: '#/components/parameters/basketId'
+        - $ref: '#/components/parameters/campaignKey'
+        - $ref: '#/components/parameters/includeItemsWithoutProductData'
+        - $ref: '#/components/parameters/skipAvailabilityCheck'
+        - $ref: '#/components/parameters/basketWith'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cost:
+                    $ref: '#/components/schemas/Cost'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BasketItem'
+                  key:
+                    type: string
+                    example: "your-basket-id"
+                  packages:
+                    $ref: '#/components/schemas/Packages'
+        '400':
+          description: required query parameter missing / invalid
+        '401':
+          description: authentication failed
+  /v1/baskets/{basketId}/items:
+    post:
+      tags:
+        - baskets
+      summary: Add an item to a basket
+      description: |
+        Baskets are created on demand when the first variant is added to the basket.
+
+        Choose a unique string as `basketId` to add variants to a new basket and to retrieve the same basket later.
+
+        Only one variant can be added to the basket with each request. Use multiple requests to add more variants.
+
+        The variant and quantity to be added is specified in the POST request body (see below). The only strictly required parameter is `variantId` and `quantity`.
+
+        Add to basket quantity should be a numeric value and always greater than zero(0). e.g: - `quantity: 1(or more)`.
+
+        The response will show the updated content of the basket.
+      operationId: add-basket-item
+      parameters:
+        - $ref: '#/components/parameters/basketId'
+        - $ref: '#/components/parameters/campaignKey'
+        - $ref: '#/components/parameters/includeItemsWithoutProductData'
+        - $ref: '#/components/parameters/pricePromotionKey'
+        - $ref: '#/components/parameters/skipAvailabilityCheck'
+        - $ref: '#/components/parameters/basketWith'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customData:
+                  type: object
+                  description: |
+                    For each item, you can add an additional custom data array. This will not change the API behavior. The data will remain attached to the basket item and you may retrieve it at any time during or after the checkout and order process.
+                  example:
+                    promotionNumber: "036"
+                  additionalProperties:
+                    $ref: '#/components/schemas/CustomData'
+                displayData:
+                  $ref: '#/components/schemas/DisplayData'
+                quantity:
+                  type: integer
+                  default: 1
+                  example: 1
+                  description: |
+                    The quantity for the variant.
+                promotionId:
+                  type: string
+                  example: 648075340c7324fae5811cd2
+                  description: |
+                    Optional id of a promotion for this item
+                shopId:
+                  type: integer
+                  default: The shopId used during authentication.
+                  description: |
+                    If you are operating multiple shops (for example, for different domain names or different languages), each shop is identified by its specific `shopId`.
+                  example: 123
+                variantId:
+                  type: integer
+                  description: The variant to be added to the basket. This is the only required parameter.
+                  example: 12345
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cost:
+                    $ref: '#/components/schemas/Cost'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BasketItem'
+                  key:
+                    type: string
+                    example: "your-basket-id"
+                  packages:
+                    $ref: '#/components/schemas/Packages'
+        '400':
+          description: required query parameter missing / invalid
+        '401':
+          description: authentication failed
+        '408':
+          description: basket is currently locked, please retry
+        '409':
+          description: conflict -  basket item for given variant already exists
+        '412':
+          description: referenced variant does not exist | variant is out of stock
+        '413':
+          description: maximum size limitation, basket exceeds 200 items
+        '422':
+          description: formal validation failure (see schema)
+        '424':
+          description: dependency is failing - item will be cached
+  /v1/baskets/{basketId}/items/{itemKey}:
+    delete:
+      tags:
+        - baskets
+      summary: Remove an item from a basket
+      description: |
+        When retrieving a basket, each item will show a unique `key` attribute, for example, `"key": "911976fb354759ae0e56c1696b9325d2"`.
+
+        To remove an item from a basket, you need to specify this key as `ìtemKey`.
+
+        The response will show the updated content of the basket.
+      operationId: remove-basket-item
+      parameters:
+        - $ref: '#/components/parameters/basketId'
+        - $ref: '#/components/parameters/basketItemKey'
+        - $ref: '#/components/parameters/campaignKey'
+        - $ref: '#/components/parameters/includeItemsWithoutProductData'
+        - $ref: '#/components/parameters/basketWith'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cost:
+                    $ref: '#/components/schemas/Cost'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BasketItem'
+                  key:
+                    type: string
+                    example: "your-basket-id"
+                  packages:
+                    $ref: '#/components/schemas/Packages'
+        '404':
+          description: item not found
+        '401':
+          description: authentication failed
+    patch:
+      tags:
+        - baskets
+      summary: Update an item in a basket
+      description: |
+        When retrieving a basket, each item will show a unique `key` attribute, for example, `"key": "911976fb354759ae0e56c1696b9325d2"`.
+
+        To update an item in a basket, you need to specify this key as `ìtemKey`.
+
+        The response will show the updated content of the basket.
+      operationId: update-basket-item
+      parameters:
+        - $ref: '#/components/parameters/basketId'
+        - $ref: '#/components/parameters/basketItemKey'
+        - $ref: '#/components/parameters/campaignKey'
+        - $ref: '#/components/parameters/includeItemsWithoutProductData'
+        - $ref: '#/components/parameters/skipAvailabilityCheck'
+        - $ref: '#/components/parameters/basketWith'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customData:
+                  type: object
+                  description: |
+                    For each item you can add an additonal custom data array. This will not change API behaviour, but the data will remain attached to the basket item and you may retrieve it at any time during or after the checkout and order process.
+                  example:
+                    promotionNumber: "036"
+                  additionalProperties:
+                    $ref: '#/components/schemas/CustomData'
+                quantity:
+                  type: integer
+                  description: |
+                    The quantity for the variant. When quantity is not specified, the current `quantity` in the basket will not be changed.
+                promotionId:
+                  type: string
+                  example: 648075340c7324fae5811cd2
+                  description: |
+                    Optional promotion id for this item. When promotionId is not specified, the current `promotion` in the basket will not be changed.
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cost:
+                    $ref: '#/components/schemas/Cost'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BasketItem'
+                  key:
+                    type: string
+                    example: "your-basket-id"
+                  packages:
+                    $ref: '#/components/schemas/Packages'
+        '206':
+          description: request successful, but the quantity was reduced due to stock limitations
+        '400':
+          description: request could not be processed (invalid JSON)
+        '401':
+          description: authentication failed
+        '404':
+          description: item not found
+        '408':
+          description: basket is currently locked, please retry
+        '412':
+          description: variant is out of stock
+        '422':
+          description: formal validation failure (see schema)
+  /v1/wishlists/{wishlistId}:
+    get:
+      tags:
+        - wishlists
+      summary: Retrieve a specific wishlist based on a wishlist key
+      description: |
+        This endpoint allows you to retrieve items previously placed in a customer's wishlist.
+        An example would be: `/v1/wishlists/wishlist-key`.
+
+        * The wishlist key is created on demand when an item is added to the wishlist via [POST request](/docs/#/wishlists/add-wishlist-item).
+        * Using the `with=` parameter, it is possible to retrieve extra information in the response. Please check the next section for all options.
+      operationId: fetch-wishlist-by-key
+      parameters:
+        - name: wishlistId
+          in: path
+          description: Wishlist ID
+          required: true
+          explode: false
+          schema:
+            type: string
+            example: your-wishlist-key
+        - name: with
+          in: query
+          description: |
+            The `with` parameter can be applied to include related resources, for example, the attributes of a product can be attached using `with=items.product.attributes`. It is also possible to filter attributes by key `with=items.product.attributes:key(plusSize)` or by type `with=items.product.attributes:type(material_care)`. In the following table, there is more information about possible includes.
+            Include | Nested includes | Available Filters
+            ------------ | ------------- | -------------
+            `items.product` | See available includes for products | Check the filters available for products
+            `items.variant` | See available includes for variants | Check the filters available for variants
+          required: false
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: skipAvailabilityCheck
+          in: query
+          description: |
+            This parameter allows disabling the availability check when fetching the items from the wishlist. This is needed to make sure that sold out products can be reserved via Click & Reserve in the offline stores (where they are still available). Important – Check if this resource is available for your shop.
+          required: false
+          explode: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: request successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wishlist'
+        '400':
+          description: only one parameter must be set (variantId or productId) / either variantId or productId must be set
+  /v1/wishlists/{wishlistId}/items:
+    post:
+      tags:
+        - wishlists
+      summary: Add items to a wishlist based on a wishlist key
+      description: |
+        Through this endpoint, you are able to add items to a customer's wishlist. Some important points should be taken into consideration:
+
+        * Items might be added both using its product ID or the variant ID.
+
+        * There is a limit regarding the maximum amount of items that might be added to the wishlist. The current limit is **200 items**.
+
+      operationId: add-wishlist-item
+      parameters:
+        - name: wishlistId
+          in: path
+          description: Wishlist ID
+          required: true
+          explode: false
+          schema:
+            type: string
+            example: your-wishlist-key
+        - name: with
+          in: query
+          description: |
+            The `with` parameter can be applied to include related resources, for example, the attributes of a product can be attached using `with=items.product.attributes`. It is also possible to filter attributes by key `with=items.product.attributes:key(plusSize)` or by type `with=items.product.attributes:type(material_care)`. In the following table, there is more information about possible includes.
+            Include | Nested includes | Available Filters
+            ------------ | ------------- | -------------
+            `items.product` | See available includes for products | Check the filters available for products
+            `items.variant` | See available includes for variants | Check the filters available for variants
+          required: false
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: skipAvailabilityCheck
+          in: query
+          description: This parameter allows disabling the availability check when adding an item to the wishlist. This is needed to make sure that sold out products can be reserved via Click & Reserve in the offline stores (where they are still available). Important – Check if this resource is available for your shop.
+          required: false
+          explode: false
+          schema:
+            type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Either variantId or productId must be provided.
+              properties:
+                variantId:
+                  type: integer
+                  default: 1
+                  description: Variant ID to add to the wishlist.
+                productId:
+                  type: integer
+                  description: Product ID to add to the wishlist. When provided, the first found in-stock variant of the product will be added.
+                customData:
+                  type: object
+                  description: |
+                    `customData ` allows you to attach data to an item. The data will remain attached to the item from the basket through the process of order creation and delegation and may be displayed to the customer during the order lifecycle.
+                  additionalProperties:
+                    $ref: '#/components/schemas/CustomData'
+                shopId:
+                  type: integer
+                  default: 1
+                  description: Identifier of the shop that usually refers to the child shop. In case it is missing, the request will assume the same app ID is used during the authentication.
+                displayData:
+                  $ref: '#/components/schemas/DisplayData'
+                quantity:
+                  type: integer
+                  default: 1
+                  example: 1
+                  description: |
+                    The quantity for the variant.
+      responses:
+        '200':
+          description: request successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wishlist'
+        '400':
+          description: only one parameter must be set
+        '409':
+          description: conflict -  wishlist item for given variant already exists
+        '412':
+          description: product currently unavailable / no variant for product id found
+        '413':
+          description: wishlist exceeds maximum items size limitation
+  /v1/wishlists/{wishlistId}/items/{itemKey}:
+    delete:
+      tags:
+        - wishlists
+      summary: Remove item from wishlist
+      description: |
+        This endpoint allows you to remove an item previously added to any given wishlist.
+
+
+        __Note__: It will remove single items from the wishlist, not the entire wishlist.
+      operationId: remove-wishlist-item
+      parameters:
+        - name: wishlistId
+          in: path
+          description: Wishlist ID
+          required: true
+          explode: false
+          schema:
+            type: string
+            example: your-wishlist-key
+        - name: itemKey
+          in: path
+          description: Item key
+          required: true
+          explode: false
+          schema:
+            type: string
+            example: item-1234
+        - name: with
+          in: query
+          description: |
+            The `with` parameter can be applied to include related resources, for example, the attributes of a product can be attached using `with=items.product.attributes`. It is also possible to filter attributes by key `with=items.product.attributes:key(plusSize)` or by type `with=items.product.attributes:type(material_care)`. In the following table, there is more information about possible includes.
+            Include | Nested includes | Available Filters
+            ------------ | ------------- | -------------
+            `items.product` | See available includes for products | Check the filters available for products
+            `items.variant` | See available includes for variants | Check the filters available for variants
+          required: false
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: request successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wishlist'
+  /v1/shop-configuration:
+    get:
+      tags:
+        - shop-configuration
+      summary: Get shop configuration properties
+      description: |
+        Each shop can be assigned one ore more custom configuration properties. You can set up and modify your [shop-specific properties](../../../en/next/manual/scayle/configuration#global-shop-properties-configuration) through the Panel.
+
+        The properties will be returned as a list composed of objects with simple string properties named `key` and `value`. For complex properties, the `value` will be encoded as a JSON string.
+      operationId: fetch-shop-configuration
+      parameters:
+        - $ref: '#/components/parameters/locale'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopConfiguration'
+  /v1/navigation/trees:
+    get:
+      tags:
+        - navigation
+      summary: Get information about navigation trees
+      description: |
+        Each shop can be assigned one ore more navigation trees. You can set up and modify your navigation trees through the  [SCAYLE Panel](../../../en/next/manual/scayle).
+
+        You can also get individual navigation trees with `/v1/navigation/trees/{navigationTreeId}`.
+      parameters:
+        - $ref: '#/components/parameters/locale'
+        - $ref: '#/components/parameters/categoryWith'
+      operationId: fetch-navigation-trees
+      responses:
+        '200':
+          description: request successful
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NavigationTree'
+        '401':
+          description: authentication failed
+  /v1/navigation/trees/{navigationTreeId}:
+    get:
+      tags:
+        - navigation
+      summary: Get navigation tree by navigationTreeId
+      description: |
+        Get navigation tree by navigationTreeId, for example, `/v1/navigation/trees/123`.
+      operationId: fetch-navigation-tree-by-id
+      parameters:
+        - name: navigationTreeId
+          in: path
+          description: Navigation tree ID
+          required: true
+          explode: false
+          schema:
+            type: integer
+            example: 123
+        - $ref: '#/components/parameters/locale'
+        - $ref: '#/components/parameters/categoryWith'
+      responses:
+        '200':
+          description: request successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationTree'
+        '400':
+          description: required query parameter missing / invalid
+        '404':
+          description: navigation tree not found
+        '401':
+          description: authentication failed
+  /v1/brands:
+    get:
+      tags:
+        - brands
+      summary: Get information about brands
+      description: |
+        Each product can be assigned to one ore more brands. You can set up and modify brands through the [SCAYLE Panel](../../../en/next/manual/scayle). Please do not use digits only for brand slugs (example: 700), use letters only or combination of letters and digits (examples: mybrand, mybrand700).
+      operationId: fetch-brands
+      parameters:
+        - $ref: '#/components/parameters/brandIds'
+        - $ref: '#/components/parameters/brandSlugs'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/perPage'
+        - $ref: '#/components/parameters/locale'
+      responses:
+        '200':
+          description: request successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandsResponse'
+              examples:
+                Brand Listing Example:
+                  $ref: '#/components/examples/BrandsResponseListing'
+  /v1/brands/{brandId}:
+    get:
+      tags:
+        - brands
+      summary: Get brand by brandId
+      description: |
+        Get brand by brandId, for example, `/v1/brands/123`.
+      operationId: fetch-brand-by-id
+      parameters:
+        - name: brandId
+          in: path
+          description: brandId
+          required: true
+          explode: false
+          schema:
+            type: integer
+            example: 123
+        - $ref: '#/components/parameters/locale'
+      responses:
+        '200':
+          description: request successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+        '400':
+          description: required query parameter missing / invalid
+        '404':
+          description: brand not found
+        '401':
+          description: authentication failed
+  /v1/brands/{slug}:
+    get:
+      tags:
+        - brands
+      summary: Get brand by brand slug
+      description: |
+        Get brand by brand slug, for example, `/v1/brands/nike`. When setting up brand slugs, please do not use digits only for brand slugs (example: 700), use letters only or combination of letters and digits (examples: mybrand, mybrand700).
+      operationId: fetch-brand-by-slug
+      parameters:
+        - name: slug
+          in: path
+          description: brand slug
+          required: true
+          explode: false
+          schema:
+            type: string
+            example: nike
+        - $ref: '#/components/parameters/locale'
+      responses:
+        '200':
+          description: request successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+        '400':
+          description: required query parameter missing / invalid
+        '404':
+          description: brand not found
+        '401':
+          description: authentication failed
+  /v1/redirects:
+    get:
+      tags:
+        - redirects
+      summary: Get all redirects
+      description: |
+        Redirects can be created on both the shop (global) and country levels. You can set up and modify your redirects through the  [SCAYLE Panel](../../../en/next/manual/scayle).
+      operationId: fetch-redirects
+      responses:
+        '200':
+          description: request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Redirect'
+                  pagination:
+                    oneOf:
+                      - $ref: '#/components/schemas/Pagination'
+                      - $ref: '#/components/schemas/OffsetPagination'
+        '401':
+          description: authentication failed
+    post:
+      tags:
+        - redirects
+      summary: Get redirect
+      description: |
+        Get redirect for URL
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  example: example.com
+                  description: |
+                    The url to find a redirect for
+      responses:
+        '200':
+          description: request successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Redirect'
+        '401':
+          description: authentication failed
+  /health:
+    get:
+      tags:
+        - default
+      summary: Basic health check
+      description: Provides an indication about the health of the API. Returns status 200 and an empty response if everything is working fine.
+      operationId: fetch-status
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+components:
+  schemas:
+    AdvancedAttribute:
+      type: object
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+          nullable: true
+        values:
+          type: object
+          properties:
+            fieldSet:
+              type: object
+              properties:
+                fieldSet:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      value: 'really cool FieldSet'
+            groupSet:
+              type: object
+              properties:
+                groupSet:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: string
+                      example:
+                        value: 'really cool GroupSet'
+    Attribute:
+      type: object
+      required:
+        - id
+        - key
+        - label
+        - multiSelect
+        - type
+      properties:
+        id:
+          type: integer
+          nullable: true
+        key:
+          type: string
+          description: Reference that identifies the attribute
+        label:
+          type: string
+          description: The locale is defined by the configuration of the shop associated with the authentication token. [Translations](../../../en/next/manual/scayle/product-translations) of the individual attributes are maintained in the SCAYLE Panel.
+        multiSelect:
+          type: boolean
+          description:  A flag which determines whether an attribute has a single or possibly multiple values.
+        type:
+          type: string
+          nullable: true
+          description: Attribute type
+        values:
+          description: If 'multiSelect' is 'true', this is an 'object' ('{ id? number, label? string, value? string }'), if 'multiSelect' is 'false' this is an array of objects.
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeValue'
+      x-ayObjects:
+        - property: values
+          isCollection: true
+          className: AttributeValue
+      x-ayOperations:
+        - methodName: getByKey
+          operation: get
+          operationId: fetch-attribute-by-key
+          path: attributes/{groupName}
+          responseModel: Attribute
+          withOptions: false
+          parameters:
+            - name: groupName
+              type: string
+    AttributeValue:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+          example: 428
+        label:
+          type: string
+          nullable: true
+          example: "Tommy Jeans"
+        value:
+          type: string
+          nullable: true
+          example: "hilfiger_denim"
+    AppliedReduction:
+      type: object
+      properties:
+        amount:
+          type: object
+          properties:
+            absoluteWithTax:
+              type: integer
+            relative:
+              type: number
+        category:
+          type: string
+          example: campaign
+        type:
+          type: string
+          example: relative
+      x-ayObjects:
+        - property: amount
+          className: AppliedReductionAmount
+    WishlistItem:
+      type: object
+      required:
+        - key
+        - packageId
+        - quantity
+        - status
+        - productId
+        - customData
+      properties:
+        key:
+          type: string
+          example: "cafb0e089cb74691e66ca33a0c9954d9"
+        packageId:
+          type: integer
+          example: 1
+        quantity:
+          type: integer
+          example: 2
+        status:
+          type: string
+          enum:
+            - available
+            - unavailable
+        product:
+          $ref: '#/components/schemas/Product'
+        variant:
+          $ref: '#/components/schemas/Variant'
+        productId:
+          type: string
+          example: "4468167"
+        masterKey:
+          type: string
+          example: "35925-99"
+        variantId:
+          type: string
+          example: "38513903"
+        customData:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/CustomData'
+      x-ayObjects:
+        - property: product
+          className: Product
+        - property: variant
+          className: Variant
+        - property: customData
+          className: CustomData
+    BasketItem:
+      type: object
+      properties:
+        cost:
+          $ref: '#/components/schemas/Cost'
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              availableQuantity:
+                type: integer
+                example: 1
+              customData:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/CustomData'
+              lowestPriorPrice:
+                type: object
+                properties:
+                  withTax:
+                    type: integer
+                    example: 4998
+                  relativeDifferenceToPrice:
+                    type: integer
+                    example: 100
+              deliveryForecast:
+                type: object
+                properties:
+                  deliverable:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        example: "directShipping"
+                      quantity:
+                        type: integer
+                        default: 1
+                        example: 1
+                  subsequentDelivery:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        example: "endOfMay"
+                      quantity:
+                        type: integer
+                        example: 2
+              displayData:
+                $ref: '#/components/schemas/DisplayData'
+              key:
+                type: string
+                example: "ac834d23e689u678"
+              packageId:
+                type: integer
+                example: 1
+              price:
+                type: object
+                properties:
+                  total:
+                    $ref: '#/components/schemas/Price'
+                  unit:
+                    $ref: '#/components/schemas/Price'
+              product:
+                $ref: '#/components/schemas/Product'
+              quantity:
+                type: integer
+                example: 1
+              promotionId:
+                type: string
+                example: 648075340c7324fae5811cd2
+              status:
+                type: string
+                example: "available"
+              variant:
+                $ref: '#/components/schemas/Variant'
+              itemGroup:
+                $ref: '#/components/schemas/ItemGroup'
+      x-ayObjects:
+        - property: customData
+          className: CustomData
+        - property: deliveryForecast
+          className: DeliveryForecast
+        - property: displayData
+          className: DisplayData
+        - property: price
+          className: BasketItemPrice
+        - property: product
+          className: Product
+        - property: variant
+          className: Variant
+    DeliveryForecast:
+      type: object
+      properties:
+        deliverable:
+          $ref: '#/components/schemas/Deliverable'
+        subsequentDelivery:
+          $ref: '#/components/schemas/SubsequentDelivery'
+      x-ayObjects:
+        - property: deliverable
+          className: Deliverable
+        - property: subsequentDelivery
+          className: SubsequentDelivery
+    Deliverable:
+      type: object
+      properties:
+        key:
+          type: string
+          example: directShipping
+        quantity:
+          type: integer
+          example: 1
+    SubsequentDelivery:
+      type: object
+      properties:
+        key:
+          type: string
+          example: endOfMay
+        quantity:
+          type: integer
+          example: 2
+    BaseCategory:
+      description: Array of the `baseCategories` attached to the product.
+      type: object
+      properties:
+        categoryId:
+          type: integer
+          description: Unique identifier of the category
+          example: 1866
+        categoryName:
+          type: string
+          description: Name of the category
+          example: Top
+        categoryParentId :
+          type: integer
+          description: Parent ID of the category
+          example: Top
+        categoryPath:
+          type: string
+          description: Category path as text
+          example: New|Fashion|Frauen|Oberteile|Top
+    Brand:
+      required:
+        - id
+        - slug
+        - group
+        - name
+        - isActive
+        - logoHash
+        - createdAt
+        - updatedAt
+        - indexedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The unique identifier of the brand (referred as `attributeId`), can be used for retrieving specific brand. ID which would be used to filter for brands in the `products` and `filters` endpoint
+        slug:
+          type: string
+          description: short text to describe the current category (usable, for example, in URLs as `fashion`).
+          example: fashion
+        name:
+          type: string
+        customData:
+          $ref: '#/components/schemas/BrandCustomData'
+          description: Arbitrary custom data object to be added to the brand.
+        externalReference:
+          type: string
+          description: External reference set by the client to integrate a third-party party system.
+        group:
+          type: string
+          description: Brand group.
+        isActive:
+          type: boolean
+          description: Whether the brand is currently active or not.
+        logoHash:
+          type: string
+          description: Logo hash used for generating the full url.
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+          description: Date string of creation, formatted according to RFC 3339.
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+          description:  Date string of last update, formatted according to RFC 3339.
+        indexedAt:
+          $ref: '#/components/schemas/Timestamp'
+          description:  Date string of last update, formatted according to RFC 3339.
+      x-ayObjects:
+        - property: customData
+          isCollection: true
+          className: CustomData
+      x-ayModels:
+        - property: createdAt
+          isTimestamp: true
+        - property: updatedAt
+          isTimestamp: true
+      x-ayOperations:
+        - methodName: get
+          operation: get
+          operationId: fetch-brands
+          path: brands
+          responseModel: BrandsResponse
+        - methodName: getById
+          operation: get
+          operationId: fetch-brand-by-id
+          path: brands/{brandId}
+          responseModel: BrandsResponse
+          parameters:
+            - name: brandId
+              type: integer
+      example:
+        id: 21
+        customData:
+          floatData: 9.8
+          localizedJson: []
+          localizedString: []
+          nonLocalizedJson:
+          nonLocalizedString: test
+        externalReference: ''
+        group: default
+        isActive: true
+        logoHash: ''
+        createdAt: '2018-01-20T09:30:15+00:00'
+        updatedAt: '2018-01-20T09:30:15+00:00'
+        indexedAt: '2023-04-26T09:30:15+00:00'
+    BrandCustomData:
+      type: object
+      properties:
+        floatData:
+          type: number
+        localizedJson:
+          type: array
+          items:
+            type: object
+        localizedString:
+          type: array
+          items:
+            type: object
+        nonLocalizedJson:
+          type: string
+        nonLocalizedString:
+          type: string
+      example:
+        localizedJson:
+          - key1: value1
+        localizedString: keyValue
+    BrandsResponse:
+      type: object
+      properties:
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Brand'
+        pagination:
+          oneOf:
+            - $ref: '#/components/schemas/Pagination'
+            - $ref: '#/components/schemas/OffsetPagination'
+      x-ayObjects:
+        - property: entities
+          className: Brand
+          isCollection: true
+      example:
+        entities:
+          - id: 21
+            customData:
+              floatData: 9.8
+              localizedJson: []
+              localizedString: []
+              nonLocalizedJson:
+              nonLocalizedString: test
+            externalReference: ''
+            group: default
+            isActive: true
+            logoHash: ''
+            createdAt: '2018-06-01 14:56:08'
+            updatedAt: '2020-06-05 09:11:25'
+            indexedAt: '2023-04-26 09:11:25'
+          - id: 22
+            customData:
+              floatData: 12
+              localizedJson: []
+              localizedString: []
+              nonLocalizedJson:
+              nonLocalizedString: ''
+            externalReference: ''
+            group: default
+            isActive: true
+            logoHash: ''
+            createdAt: '2018-06-01 14:56:08'
+            updatedAt: '2020-06-05 09:11:25'
+            indexedAt: '2023-04-26 09:11:25'
+        pagination:
+          current: 100
+          first: 1
+          last: 49
+          next: 2
+          page: 1
+          perPage: 100
+          prev: 1
+          total: 4879
+
+    BrandOrCategorySuggestion:
+      type: object
+      properties:
+        attributeFilters:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 550
+              name:
+                type: string
+                example: "brand"
+              slug:
+                type: string
+                description: short text to describe the current category (usable, for example, in URLs as `fashion`).
+                example: brand
+              values:
+                type: array
+                items:
+                  type: integer
+                  example:
+                    - 53709
+        brand:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 53709
+            name:
+              type: string
+              example: "Nike Sportswear"
+        category:
+          $ref: '#/components/schemas/Category'
+        primaryMatch:
+          type: string
+          example: "brand"
+        productCount:
+          type: integer
+          example: 140
+        suggestion:
+          type: string
+          example: "<em>Nike</em> Sportswear"
+    Category:
+      type: object
+      required:
+        - id
+        - childrenIds
+        - depth
+        - isHidden
+        - name
+        - parentId
+        - path
+        - properties
+        - rootlineIds
+        - slug
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier of the category.
+        parent:
+          $ref: '#/components/schemas/Category'
+          description: Parent category, if existent and requested, using `with`.
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+          description: |
+            Array of child category objects, if requested, using `with`.
+            The childrenIds are always included.Array of child category objects, if requested, using with.
+            The `childrenIds` are always included.
+        childrenIds:
+          type: array
+          description: child category IDs attached to the current category
+          items:
+            type: integer
+            example:
+              - 10
+        depth:
+          type: integer
+          description: nesting level of the category (root-level depth = 1, child nodes = 2, child nodes' children = 3, etc.)
+          example: 2
+        isHidden:
+          type: boolean
+          description: The category should not be shown in the front end if this is set to `true`.
+          example: false
+        name:
+          type: string
+          description: the name of the category
+          example: Women
+        parentId:
+          description: parent category ID (root-level categories have a parent ID of `0`)
+          type: integer
+          example: 20201
+        path:
+          type: string
+          description: slugs for all `rootlineIds` combined with `/` (e.g., `/women/fashion`).
+          example: /women
+        properties:
+          type: array
+          description: Properties attached to this category.
+          items:
+            type: object
+            properties:
+              is_inheritable:
+                type: integer
+                example: 1
+              name:
+                type: string
+                example: priority
+              value:
+                oneOf:
+                  - type: string
+                  - type: number
+                  - type: object
+                  - type: array
+                nullable: true
+                example: "3"
+        rootlineIds:
+          type: array
+          description: Contains the IDs for the path from the topmost root category to the current category, which is included as the last item.
+          items:
+            type: integer
+            example:
+              - 9
+        slug:
+          type: string
+          description: Generated slug for the category, a short text to describe the current category (usable, for example, in URLs as `fashion`).
+          example: women
+        supportedFilter:
+          type: array
+          description: a list of filters that can be used for filtering products in the category (for example, `armLength` or `mainMaterial`)
+          items:
+            type: string
+            example:
+              - "pattern"
+        shopLevelCustomData:
+          type: object
+          properties:
+            appCatName:
+              type: object
+            appCatLocalizedConfig:
+              type: object
+        countryLevelCustomData:
+          type: object
+          properties:
+            appCatCountryName:
+              type: string
+            appCatCountryScore:
+              type: number
+            appCatCountryBubbleUp:
+              type: boolean
+            appCatCountrySampleName:
+              type: string
+            appCatCountrySampleConfig:
+              type: object
+            appCatCountryLocalizedConfig:
+              type: object
+      x-ayObjects:
+        - property: parent
+          className: Category
+        - property: children
+          isCollection: true
+          className: Category
+        - property: properties
+          isCollection: true
+          className: CategoryProperty
+      x-ayOperations:
+        - methodName: getRoots
+          operation: get
+          operationId: fetch-categories
+          path: categories
+          responseModel: Category
+          isResponseCollection: true
+        - methodName: getByIds
+          operation: get
+          operationId: fetch-categories
+          path: categories
+          responseModel: Category
+          isResponseCollection: true
+          parameters:
+            - name: categoryIds
+              type: array
+              isQueryParameter: true
+              queryName: ids
+        - methodName: getById
+          operation: get
+          operationId: fetch-category-by-id
+          path: categories/{categoryId}
+          responseModel: Category
+          parameters:
+            - name: categoryId
+              type: integer
+        - methodName: getByPath
+          operation: get
+          operationId: fetch-category-by-path
+          path: categories/{categoryPath}
+          responseModel: Category
+          parameters:
+            - name: categoryPath
+              type: string
+    CategoryProperty:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "gender"
+        value:
+          nullable: true
+          oneOf:
+            - type: string
+            - type: number
+          example: "male"
+    CustomData:
+      type: object
+      properties:
+        key:
+          type: string
+          example: "value"
+        value:
+          type: string
+          example: "value2"
+        pricePromotionKey:
+          type: string
+          description: Adjust variant price based on the specified `pricePromotionKey`. If the variant does not have a matching price promotion, the default price is returned.
+          example: "abc"
+    ItemGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "Bm3D7D85"
+        isMainItem:
+          type: boolean
+          example: "true"
+        isRequired:
+          type: boolean
+          example: "true"
+    CreateWishlistBody:
+      type: object
+      description: Either variantId or productId must be provided.
+      properties:
+        variantId:
+          type: integer
+          description: Variant ID to add to the wishlist.
+        productId:
+          type: integer
+          description: Product ID to add to the wishlist. When provided, the first found in-stock variant of the product will be added.
+        customData:
+          type: object
+          description: |
+            `customData ` allows you to attach data to an item. The data will remain attached to the item from the basket through the process of order creation and delegation and may be displayed to the customer during the order lifecycle.
+        shopId:
+          type: integer
+          description: Identifier of the shop that usually refers to the child shop. In case it is missing, the request will assume the same app ID is used during the authentication.
+    CreateBasketBody:
+      type: object
+      properties:
+        customData:
+          type: object
+          description: |
+            For each item, you can add an additional custom data array. This will not change the API behavior. The data will remain attached to the basket item and you may retrieve it at any time during or after the checkout and order process.
+        displayData:
+          type: object
+          description: Custom basket item properties for display during SCAYLE  checkout and order process can be set with displayData.
+        quantity:
+          type: integer
+          description: |
+            The quantity for the variant.
+        shopId:
+          type: integer
+          description: |
+            If you are operating multiple shops (for example, for different domain names or different languages), each shop is identified by its specific `shopId`.
+        variantId:
+          type: integer
+          description: The variant to be added to the basket. This is the only required parameter.
+    Cost:
+      type: object
+      properties:
+        appliedReductions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppliedReduction'
+        currencyCode:
+          type: string
+          description: The currency of the price.
+        withoutTax:
+          type: integer
+        withTax:
+          type: integer
+    DisplayData:
+      description: |
+        Custom basket item properties for display during the SCAYLE Checkout and order process can be set with `displayData`.
+
+        Available `displayData` properties are `meta`, `name`, `identifier`, `attribute-1`, `attribute-2`, `attribute-3`.
+
+        Each of the `displayData` property objects can have a `key`, `label` and `value` property.
+
+        The properties will remain attached to the basket item during the checkout and order process
+      type: object
+      example:
+        identifier:
+          key: "product-id"
+          label: "Product ID"
+          value: "a random value"
+    DefiningAttribute:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        label:
+          type: string
+          nullable: true
+        value:
+          type: string
+          nullable: true
+    Filter:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+          example: null
+        name:
+          type: string
+          example: "Savings"
+        slug:
+          type: string
+          description: short text to describe the current category (usable, for example, in URLs as `fashion`).
+          example: "max_savings_percentage"
+        attributeGroupType:
+          type: string
+          example: "computed_attribute"
+        type:
+          type: string
+          example: "range"
+        values:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/AttributeFilterValue'
+            - type: array
+              items:
+                $ref: '#/components/schemas/BooleanFilterValue'
+            - type: array
+              items:
+                $ref: '#/components/schemas/RangeFilterValue'
+            - type: array
+              items:
+                $ref: '#/components/schemas/IdentifierFilterValue'
+      x-ayModels:
+        - property: values
+          discriminatedBy: type
+          discriminatorMapping:
+            - value: boolean
+              className: BooleanFilterValue
+              isCollection: true
+              fieldName: booleanFilterValues
+            - value: range
+              className: RangeFilterValue
+              isCollection: true
+              fieldName: rangeFilterValues
+            - value: attributes
+              className: AttributeFilterValue
+              isCollection: true
+              fieldName: attributeFilterValues
+            - value: identifier
+              className: IdentifierFilterValue
+              isCollection: true
+              fieldName: identifierFilterValue
+      x-ayOperations:
+        - methodName: get
+          operation: get
+          operationId: fetch-filters
+          path: filters
+          responseModel: Filter
+          isResponseCollection: true
+        - methodName: getValues
+          operation: get
+          operationId: fetch-filter-by-group
+          path: filters/{groupName}/values
+          responseModel: Filter
+          isResponseCollection: true
+          parameters:
+            - name: groupName
+              type: string
+    AttributeFilterValue:
+      type: object
+      properties:
+        name:
+          type: string
+          example: '42'
+        productCount:
+          type: integer
+          example: 1231
+        id:
+          type: integer
+          example: 55
+        value:
+          type: string
+          example: '42'
+    IdentifierFilterValue:
+      type: object
+      properties:
+        productCount:
+          type: integer
+          example: 1231
+        id:
+          type: integer
+          example: 55
+    BooleanFilterValue:
+      type: object
+      properties:
+        name:
+          type: boolean
+          example: true
+        productCount:
+          type: integer
+          example: 1231
+    RangeFilterValue:
+      type: object
+      properties:
+        max:
+          type: integer
+          example: 3255
+        min:
+          type: integer
+          example: 735
+        productCount:
+          type: integer
+          example: 1231
+    Image:
+      type: object
+      properties:
+        attributes:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Attribute'
+        hash:
+          type: string
+      x-ayObjects:
+        - property: attributes
+          isCollection: true
+          className: Attribute
+    Match:
+      type: object
+      properties:
+        type:
+          type: string
+          example: "category"
+          enum:
+            - attribute
+            - category
+        id:
+          type: integer
+          example: 282
+          nullable: true
+        name:
+          type: string
+          example: pullover
+          nullable: true
+        match:
+          type: string
+          example: Langarmshirts
+          nullable: true
+        attributeGroup:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 97
+            slug:
+              type: string
+              description: short text to describe the current category (usable, for example, in URLs as `fashion`).
+              example: "searchColor"
+        attributeIds:
+          type: array
+          items:
+            type: integer
+            example:
+              - 895
+    ResolveMatch:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 20201
+        match:
+          type: string
+          example: "Hosen Unifarben"
+        category:
+          type: object
+          properties:
+            match:
+              type: string
+              example: "Hosen"
+            id:
+              type: integer
+              example: 20201
+            name:
+              type: string
+              example: "Hosen"
+        attributes:
+          type: array
+          items:
+            type: object
+            properties:
+              match:
+                type: string
+                example: "Unifarben"
+              name:
+                type: string
+                example: "pattern"
+              attributeGroup:
+                type: integer
+                example: 123
+              attributeId:
+                type: integer
+                example: 223344
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 20201
+        name:
+          type: string
+          example: "Summer_Campaign"
+        key:
+          type: string
+        description:
+          type: string
+          example: "10% discount for all summer products"
+        reduction:
+          type: integer
+          example: 10
+        customData:
+          type: object
+          properties:
+            prices:
+              type: integer
+            newField1:
+              type: integer
+            newField2:
+              type: object
+        start_at:
+          type: string
+          example: "2021-04-13T08:45:00+00:00"
+        end_at:
+          type: string
+          example: "2021-05-13T08:45:00+00:00"
+      x-ayOptions:
+        isServiceSingular: true
+      x-ayOperations:
+        - methodName: getAll
+          operation: get
+          operationId: fetch-campaigns
+          path: campaigns
+          responseModel: CampaignsResponse
+        - methodName: getById
+          operation: get
+          operationId: fetch-campaign-by-id
+          path: campaigns/{campaignId}
+          responseModel: Campaign
+          withOptions: false
+          parameters:
+          - name: campaignId
+            type: integer
+    CampaignsResponse:
+      type: object
+      properties:
+        pagination:
+          "$ref": "#/components/schemas/Pagination"
+        entities:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Campaign"
+      x-ayObjects:
+        - property: pagination
+          className: Pagination
+        - property: entities
+          className: Campaign
+          isCollection: true
+    Packages:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+          carrierKey:
+            type: string
+          deliveryDate:
+            type: object
+            properties:
+              max:
+                type: string
+                example: "2018-02-05"
+              min:
+                type: string
+                example: "2018-02-02"
+      x-ayObjects:
+        - property: deliveryDate
+          className: DeliveryDate
+    Package:
+      type: object
+      properties:
+        id:
+          type: integer
+        carrierKey:
+          type: string
+        deliveryDate:
+          $ref: '#/components/schemas/DeliveryDate'
+      x-ayObjects:
+        - property: deliveryDate
+          className: DeliveryDate
+    DeliveryDate:
+      type: object
+      properties:
+        max:
+          type: string
+          example: '2018-02-05'
+        min:
+          type: string
+          example: '2018-02-02'
+    Pagination:
+      type: object
+      properties:
+        current:
+          type: integer
+        first:
+          type: integer
+        last:
+          type: integer
+        next:
+          type: integer
+        page:
+          type: integer
+        perPage:
+          type: integer
+        prev:
+          type: integer
+        total:
+          type: integer
+    Navigation:
+      x-ayOptions:
+        isServiceSingular: true
+      x-ayOperations:
+      - methodName: getAll
+        operation: get
+        operationId: fetch-navigation-trees
+        path: navigation/trees
+        responseModel: NavigationTree
+        isResponseCollection: true
+        withOptions: false
+      - methodName: getById
+        operation: get
+        operationId: fetch-navigation-tree-by-id
+        path: navigation/trees/{navigationTreeId}
+        responseModel: NavigationTree
+        withOptions: false
+        parameters:
+        - name: navigationTreeId
+          type: integer
+
+    NavigationTree:
+      type: object
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        name:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationItem'
+    NavigationItemExtraFilter:
+      type: object
+      properties:
+        atrributes:
+          type: array
+          items:
+            type: object
+            properties:
+              attribute:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  key:
+                    type: string
+                  label:
+                    type: string
+                  type:
+                    type: string
+                  multiSelect:
+                    type: boolean
+              include:
+                type: array
+                items:
+                  type: integer
+    NavigationItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        assets:
+          type: array
+          items:
+            type: string
+        name:
+          type: string
+          items:
+            type: string
+        type:
+          type: string
+          example: "external"
+        visibleFrom:
+          type: string
+        visibleTo:
+          type: string
+        options:
+          type: object
+          properties:
+            url:
+              type: string
+            isOpenInNewWindow:
+              type: boolean
+        extraFilters:
+          $ref: '#/components/schemas/NavigationItemExtraFilter'
+        category:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Category'
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationItem'
+    OffsetPagination:
+      type: object
+      properties:
+        total:
+          type: integer
+    BasketItemPrice:
+      type: object
+      properties:
+        total:
+          $ref: '#/components/schemas/Price'
+        unit:
+          $ref: '#/components/schemas/Price'
+      x-ayObjects:
+        - property: total
+          className: Price
+        - property: unit
+          className: Price
+    Price:
+      type: object
+      properties:
+        appliedReductions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppliedReduction'
+        currencyCode:
+          type: string
+          description: The currency of the price.
+        reference:
+          type: object
+          properties:
+            size:
+              type: integer
+              description:  Size of the reference (100m, 100ml), but in this field fill in only the value without the unit of measurement.
+            unit:
+              type: string
+              description: The size of reference unit (KG, ml, L, etc.) without the value
+            withoutTax:
+              type: integer
+              description: Reference price excluding the taxes.
+            withTax:
+              type: integer
+              description: Item price including taxes. The price is calculated including taxes and all applicable reductions such as discounts for sale and campaigns (should a campaign key be provided on the request).
+        tax:
+          type: object
+          properties:
+            vat:
+              type: object
+              properties:
+                amount:
+                  type: number
+                rate:
+                  type: number
+        withoutTax:
+          type: integer
+        withTax:
+          type: integer
+        recommendedRetailPrice:
+          type: integer
+      x-ayObjects:
+        - property: appliedReductions
+          isCollection: true
+          className: AppliedReduction
+        - property: tax
+          className: Tax
+    PriceRange:
+      type: object
+      properties:
+        max:
+          $ref: '#/components/schemas/Price'
+        min:
+          $ref: '#/components/schemas/Price'
+      x-ayObjects:
+        - property: max
+          className: Price
+        - property: min
+          className: Price
+    ReductionRange:
+      type: object
+      properties:
+        max:
+          $ref: '#/components/schemas/Price'
+        min:
+          $ref: '#/components/schemas/Price'
+      x-ayObjects:
+          - property: max
+            className: Price
+          - property: min
+            className: Price
+
+    LowestPriorPrice:
+      type: object
+      description: Information about the items' lowest price in the past 30 days.
+      properties:
+        withTax:
+          type: integer
+        relativeDifferenceToPrice:
+          type: number
+          format: float
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        advancedAttributes:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AdvancedAttribute'
+        attributes:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Attribute'
+        baseCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/BaseCategory'
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductCategory'
+        definingAttributes:
+          $ref: '#/components/schemas/DefiningAttribute'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        customData:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/CustomData'
+        isActive:
+          type: boolean
+          description: Identifies whether a product is active or not
+        isNew:
+          type: boolean
+          description: Identifies whether a product is new or not
+        isSoldOut:
+          type: boolean
+          description: Identifies if a product is still available to sell
+        masterKey:
+          type: string
+          description: Identifies the master product which this product belongs
+          example: "480306626-1"
+        firstLiveAt:
+          type: string
+          description: Identifies the first time one of the products variants went live
+          example: '2020-09-15T07:34:22+00:00'
+        pricePromotionInfo:
+          type: object
+          properties:
+            is_any_price_promotion_key_in_sale:
+              type: boolean
+            are_all_price_promotion_keys_in_sale:
+              type: boolean
+            quantity_of_price_promotions_keys:
+              type: integer
+        priceRange:
+          $ref: '#/components/schemas/PriceRange'
+        reductionRange:
+          $ref: '#/components/schemas/ReductionRange'
+        lowestPriorPrice:
+          $ref: '#/components/schemas/LowestPriorPrice'
+        referenceKey:
+          type: string
+          nullable: true
+        searchCategoryIds:
+          type: array
+          items:
+            type: integer
+          example:
+            - 123456
+            - 234567
+            - 345678
+        siblings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+          description: list of Products
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variant'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        indexedAt:
+          $ref: '#/components/schemas/Timestamp'
+      x-ayObjects:
+        - property: attributes
+          isCollection: true
+          className: Attribute
+        - property: advancedAttributes
+          isCollection: true
+          className: AdvancedAttribute
+        - property: categories
+          is2dCollection: true
+          className: ProductCategory
+        - property: definingAttributes
+          className: DefiningAttribute
+        - property: images
+          isCollection: true
+          className: Image
+        - property: priceRange
+          className: PriceRange
+        - property: reductionRange
+          className: ReductionRange
+        - property: lowestPriorPrice
+          className: LowestPriorPrice
+        - property: siblings
+          isCollection: true
+          className: Product
+        - property: baseCategories
+          isCollection: true
+          className: BaseCategory
+        - property: variants
+          isCollection: true
+          className: Variant
+      x-ayModels:
+        - property: createdAt
+          isTimestamp: true
+        - property: updatedAt
+          isTimestamp: true
+      x-ayOperations:
+        - methodName: getById
+          operation: get
+          operationId: fetch-product-by-id
+          path: products/{productId}
+          responseModel: Product
+          parameters:
+            - name: productId
+              type: integer
+        - methodName: query
+          operation: get
+          operationId: fetch-products
+          path: products
+          responseModel: ProductsResponse
+    ProductCategory:
+      type: object
+      properties:
+        categoryId:
+          type: integer
+          format: int64
+        categoryHidden:
+          type: boolean
+        categoryName:
+          type: string
+        categoryProperties:
+          type: object
+          properties:
+            is_inheritable:
+              type: integer
+            name:
+              type: string
+            value:
+              type: string
+        shopLevelCustomData:
+          type: object
+          properties:
+            appCatName:
+              type: object
+            appCatLocalizedConfig:
+              type: object
+        countryLevelCustomData:
+          type: object
+          properties:
+            appCatCountryName:
+              type: string
+            appCatCountryScore:
+              type: number
+            appCatCountryBubbleUp:
+              type: boolean
+            appCatCountrySampleName:
+              type: string
+            appCatCountrySampleConfig:
+              type: object
+            appCatCountryLocalizedConfig:
+              type: object
+        categoryUrl:
+          type: string
+        categorySlug:
+          type: string
+      x-ayObjects:
+        - property: categoryProperties
+          isCollection: true
+          className: CategoryProperty
+    ProductName:
+      type: object
+      properties:
+        term:
+          type: string
+    ProductsResponse:
+      type: object
+      properties:
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        pagination:
+          oneOf:
+            - $ref: '#/components/schemas/Pagination'
+            - $ref: '#/components/schemas/OffsetPagination'
+      x-ayObjects:
+        - property: entities
+          className: Product
+          isCollection: true
+    ProductSuggestion:
+      type: object
+      properties:
+        product:
+          $ref: '#/components/schemas/Product'
+        score:
+          type: number
+          example: 4.001781
+        type:
+          type: string
+          example: "product"
+      x-ayObjects:
+        - property: product
+          className: Product
+    Search:
+      x-ayOptions:
+        isServiceSingular: true
+      x-ayOperations:
+        - methodName: suggestions
+          operation: get
+          operationId: fetch-suggestions
+          path: search/suggestions
+          responseModel: SearchSuggestions
+          parameters:
+            - name: term
+              type: string
+              isQueryParameter: true
+              queryName: term
+    SearchSuggestions:
+      type: object
+      properties:
+        brands:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeValue'
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        productNames:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductName'
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+      x-ayObjects:
+        - property: brands
+          isCollection: true
+          className: AttributeValue
+        - property: categories
+          isCollection: true
+          className: Category
+        - property: productNames
+          isCollection: true
+          className: ProductName
+        - property: products
+          isCollection: true
+          className: Product
+    ShopConfiguration:
+      type: object
+      properties:
+        shopId:
+          type: integer
+          example: 139
+        name:
+          type: string
+          example: aboutyou
+        shopCustomData:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/CustomData'
+        properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShopProperties'
+        customData:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/CustomData'
+        country:
+          type: string
+          example: DE
+      x-ayObjects:
+        - property: customData
+          className: CustomData
+        - property: properties
+          isCollection: true
+          className: ShopProperties
+      x-ayOperations:
+        - methodName: suggestions
+          operation: get
+          operationId: fetch-shop-configuration
+          path: shop-configuration
+          responseModel: ShopConfiguration
+          parameters:
+            - name: locale
+              type: string
+              isQueryParameter: true
+              queryName: locale
+    ShopProperties:
+      type: object
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+    Stock:
+      type: object
+      properties:
+        deliveryForecast:
+          type: object
+          properties:
+            deliverable:
+              type: string
+            subsequentDelivery:
+              type: string
+        isSellableWithoutStock:
+          type: boolean
+        quantity:
+          type: integer
+        warehouseId:
+          nullable: true
+          type: integer
+        supplierId:
+          type: integer
+      x-ayObjects:
+        - property: customData
+          className: CustomData
+        - property: deliveryForecast
+          className: DeliveryForecast
+    Tax:
+      type: object
+      properties:
+        vat:
+          $ref: '#/components/schemas/Vat'
+      x-ayObjects:
+        - property: vat
+          className: Vat
+    Timestamp:
+      type: string
+      description:  Date string, formatted according to RFC 3339, e.g. 2018-06-01T14:56:08+02:00
+      example: "2023-01-26T09:30:15+00:00"
+    Typeahead:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypeaheadSuggestion'
+        topMatch:
+          $ref: '#/components/schemas/TypeaheadSuggestion'
+      x-ayOptions:
+        isServiceSingular: true
+      x-ayOperations:
+        - methodName: getSuggestions
+          operation: get
+          operationId: fetch-typeahead-suggestions-get
+          path: typeahead
+          responseModel: Typeahead
+          parameters:
+            - name: term
+              type: string
+              isQueryParameter: true
+              queryName: term
+        - methodName: postSuggestions
+          operation: post
+          operationId: fetch-typeahead-suggestions-post
+          path: typeahead
+          responseModel: Typeahead
+          requestModel: TypeaheadBody
+          parameters:
+            - name: term
+              type: string
+              isQueryParameter: true
+              queryName: term
+      x-ayObjects:
+        - property: suggestions
+          isCollection: true
+          className: TypeaheadSuggestion
+        - property: topMatch
+          className: TypeaheadSuggestion
+    TypeaheadBody:
+      type: object
+      properties:
+        fuzziness:
+          description: 'The fuzziness parameter can enable some typo tolerance. Available values are 0, 1, 2, and auto. Defaults to auto. Note: The value set in the SCAYLE  Panel will not impact this search.'
+          type: string
+          enum:
+            - 0
+            - 1
+            - 2
+            - auto
+        likedBrands:
+          type: array
+          description: The `likedBrands` parameter can boost and adjust results by matching the given brand IDs.
+          items:
+            type: integer
+        categoryId:
+          type: integer
+          description: The `categoryId` parameter can filter by category ID.
+          example: 20201
+        limit:
+          type: integer
+          description: The `limit` parameter allows limiting the number of suggested products returned.
+          example: 10
+        term:
+          type: string
+          description: The `term` parameter allows you to query for any entity with a full or partial match with the given term.
+    TypeaheadSuggestion:
+      type: object
+      properties:
+        brandOrCategorySuggestion:
+          $ref: '#/components/schemas/BrandOrCategorySuggestion'
+        score:
+          type: number
+          example: 52.762222
+        type:
+          type: string
+          example: "brandOrCategory"
+      x-ayObjects:
+        - property: brandOrCategorySuggestion
+          className: BrandOrCategorySuggestion
+        - property: productSuggestion
+          className: ProductSuggestion
+    Variant:
+      type: object
+      properties:
+        id:
+          type: integer
+        advancedAttributes:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AdvancedAttribute'
+        appliedPricePromotionKey:
+          type: string
+        attributes:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Attribute'
+        price:
+          $ref: '#/components/schemas/Price'
+        productId:
+          type: integer
+          example: 123456
+        referenceKey:
+          type: string
+          example: "563843898"
+        firstLiveAt:
+          type: string
+          description: Identifies the first time the variant went live
+          example: '2020-09-15T07:34:22+00:00'
+        stock:
+          $ref: '#/components/schemas/Stock'
+        customData:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/CustomData'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+      x-ayObjects:
+        - property: attributes
+          isCollection: true
+          className: Attribute
+        - property: advancedAttributes
+          isCollection: true
+          className: AdvancedAttribute
+        - property: price
+          className: Price
+        - property: stock
+          className: Stock
+      x-ayOperations:
+        - methodName: getByIds
+          operation: get
+          operationId: fetch-variant-by-id
+          path: variants
+          responseModel: VariantsResponse
+          parameters:
+            - name: variantIds
+              type: array
+              isQueryParameter: true
+              queryName: ids
+      x-ayModels:
+        - property: createdAt
+          isTimestamp: true
+        - property: updatedAt
+          isTimestamp: true
+    VariantsResponse:
+      type: object
+      properties:
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variant'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      x-ayObjects:
+        - property: entities
+          isCollection: true
+          className: Variant
+        - property: pagination
+          className: Pagination
+    Vat:
+      type: object
+      properties:
+        amount:
+          type: number
+        rate:
+          type: number
+    Wishlist:
+      type: object
+      required:
+        - key
+        - items
+      properties:
+        key:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WishlistItem'
+      x-ayOperations:
+        - methodName: addItem
+          operation: post
+          operationId: add-wishlist-item
+          path: wishlists/{wishlistId}/items
+          responseModel: Wishlist
+          requestModel: CreateWishlistBody
+          parameters:
+            - name: wishlistId
+              type: string
+        - methodName: get
+          operation: get
+          operationId: fetch-wishlist-by-key
+          path: wishlists/{wishlistId}
+          responseModel: Wishlist
+          parameters:
+            - name: wishlistId
+              type: string
+        - methodName: remove
+          operation: delete
+          operationId: remove-wishlist-item
+          path: wishlists/{wishlistId}/items/{itemKey}
+          responseModel: Wishlist
+          parameters:
+            - name: wishlistId
+              type: string
+            - name: itemKey
+              type: string
+      x-ayObjects:
+        - property: items
+          isCollection: true
+          className: WishlistItem
+    Basket:
+      type: object
+      required:
+        - key
+        - items
+      properties:
+        key:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BasketItem'
+        cost:
+          $ref: '#/components/schemas/Price'
+        packages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Package'
+      x-ayOperations:
+        - methodName: addItem
+          operation: post
+          operationId: add-basket-item
+          path: baskets/{basketId}/items
+          responseModel: Basket
+          requestModel: CreateBasketBody
+          parameters:
+            - name: basketId
+              type: string
+        - methodName: get
+          operation: get
+          operationId: fetch-basket-by-key
+          path: baskets/{basketId}
+          responseModel: Basket
+          parameters:
+            - name: basketId
+              type: string
+        - methodName: remove
+          operation: delete
+          operationId: remove-basket-item
+          path: baskets/{basketId}/items/{itemKey}
+          responseModel: Basket
+          parameters:
+            - name: basketId
+              type: string
+            - name: itemKey
+              type: string
+        - methodName: update
+          operation: patch
+          operationId: update-basket-item
+          path: baskets/{basketId}/items/{itemKey}
+          responseModel: Basket
+          requestModel: CreateBasketBody
+          parameters:
+            - name: basketId
+              type: string
+            - name: itemKey
+              type: string
+      x-ayObjects:
+        - property: items
+          isCollection: true
+          className: BasketItem
+        - property: cost
+          className: Price
+        - property: packages
+          isCollection: true
+          className: Package
+    Redirect:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The unique identifier of the redirect
+        source:
+          type: string
+          description: The source URL for the redirect
+          example: example.com
+        target:
+          type: string
+          description: The target URL for the redirect
+          example: example.de
+        statusCode:
+          type: integer
+          description: The the status code for the redirect
+          example: 301
+  parameters:
+    locale:
+      name: locale
+      in: query
+      description: use enabled locale instead of default locale
+      required: false
+      explode: false
+      schema:
+        type: string
+        example: de_DE
+    basketId:
+      name: basketId
+      in: path
+      description: Basket ID
+      required: true
+      explode: false
+      schema:
+        type: string
+        example: your-basket-id
+    basketItemKey:
+      name: itemKey
+      in: path
+      description: itemKey
+      required: true
+      explode: false
+      schema:
+        type: string
+    basketWith:
+      name: with
+      in: query
+      description: |
+        The `with` parameter can be applied to include related resources, for example, the attributes of a product can be attached using `with=items.product.attributes`. It is also possible to filter attributes by key `with=items.product.attributes:key(plusSize)` or by type `with=items.product.attributes:type(material_care)`. In the following table, there is more information about possible includes.
+        Include | Nested Includes | Available Filters
+        ------------ | ------------- | -------------
+        `items.product` | See available includes for products | Check the filters available for products
+        `items.variant` | See available includes for variants | Check the filters available for variants
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    boostAttributes:
+      name: boostAttributes[attributeGroupId|attributeGroupName]
+      in: query
+      description: |
+        Define which attributes should be boosted in the products search result, multiple attributes can be provided separated by `,` and both the attribute group name or id can be used. e.g: `boostAttributes[farbe]=17,7` or `boostAttributes[2]=17,7`.
+      required: false
+      explode: false
+      schema:
+        type: integer
+    boostValues:
+      name: boostValues
+      in: query
+      description: |
+        Define a float value to boost the attributes used in boostAttributes, it should be a floating point number
+        between 0 and 1.0 e.g: `boostAttributes=0.5`
+      required: false
+      explode: false
+      schema:
+        type: string
+    campaignKey:
+      name: campaignKey
+      in: query
+      description: |
+        Adjust variant price based on the specified `campaignKey`. If the variant does not have a matching campaign, the default price is returned.
+        * It will adjust prices also for the price range resource.
+        * Currently, `campaignKey` support legacy way `campaignKey=px` and custom campaigns eg.- `campaignKey=4d265817-dd00-4c89-b8e4-c1776e06aa14` which you can find actual keys in campaign API endpoint - `/v1/campaigns`
+      required: false
+      explode: false
+      example: px | <ACTUAL_CAMPAIGN_KEY>
+      schema:
+        type: string
+    categoriesFormat:
+      name: format
+      in: query
+      description: The format determines whether the categories should be returned as a tree (nested lists) or a flattened list.
+      required: false
+      explode: false
+      schema:
+        type: string
+        enum:
+          - tree
+          - list
+        default: tree
+    categoriesShowHidden:
+      name: showHidden
+      in: query
+      description: The `showHidden` will include hidden categories in the result. By default they are excluded.
+      required: false
+      explode: false
+      schema:
+        type: boolean
+        default: false
+    categoriesDepth:
+      name: depth
+      in: query
+      description: The depth defines the number of nested categories to include in the response.
+      required: false
+      explode: false
+      schema:
+        type: integer
+        default: infinite
+    categoriesWith:
+      name: with
+      in: query
+      description: |
+        The `with` parameter can be applied to include related resources, for example, the parents of a category can be attached using with=parents, and multiple combinations are likewise accepted, with=parents, descendants. In the following table, there is more information about all the possibilities.
+        Include | includes
+        ------------ | -------------
+        `parents` | includes all ancestors of the category
+        `descendants` | includes all descendants of the category, which are available as children on each node; depth can be modified using the depth parameter
+        `children` | includes all descendants of the category, which are available as children on each node; depth can be modified using the depth parameter
+        `properties:name(property)` | retrieves only selected properties
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    categoryWith:
+      name: with
+      in: query
+      description: |
+        The `with` parameter can be applied to include category in the navigationItem lists using `with=category`.
+        Include | includes
+        ------------ | -------------
+        `category` | includes category as an object into the navigation-item
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    containsSearch:
+      name: containsSearch
+      in: query
+      description: |
+        Allow performing a contains search using the term specified in the `filters[term]`, it will perform a search analysing a fraction of the content rather than an exact search match.
+
+        __Attention__: When enabled it may affect significantly the search performance, avoid using it for large data sets.
+      required: false
+      explode: false
+      schema:
+        type: boolean
+    includeSellableForFree:
+      name: includeSellableForFree
+      in: query
+      description: Also include variants with `price=0`.
+      required: false
+      explode: false
+      schema:
+        type: boolean
+    includeSoldOut:
+      name: includeSoldOut
+      in: query
+      description: Also include sold out results when `includeSoldOut` is set to `true`.
+      required: false
+      explode: false
+      schema:
+        type: boolean
+        default: false
+    minProductId:
+      name: minProductId
+      in: query
+      description: Only include results with a productId greater than or equal to `minProductId`.
+      required: false
+      explode: false
+      schema:
+        type: integer
+    disableFuzziness:
+      name: disableFuzziness
+      in: query
+      description: It allows to ignore the typo tolerance value configured for the search via search configuration, when the parameter is not provided, the typo tolerance is automatically applied according to the configuration.
+      required: false
+      explode: false
+      schema:
+        type: boolean
+    page:
+      name: page
+      in: query
+      description: Return results for `page` (for example, `page=2`).
+      required: false
+      explode: false
+      schema:
+        type: integer
+        default: 1
+    perPage:
+      name: perPage
+      in: query
+      description: Return `perPage` results per page (for example, `perPage=25`).
+      required: false
+      explode: false
+      schema:
+        type: integer
+        default: 100
+    limit:
+      name: limit
+      in: query
+      description: Return `limit` results per page (for example, `limit=25`). Using this parameter is exclusive with both `page` and `perPage` and is meant to be used with `offset` parameter. It will transform the pagination response.
+      required: false
+      explode: false
+      schema:
+        type: integer
+        default: 100
+    offset:
+      name: offset
+      in: query
+      description: Skips first `offset` results. Using this parameter is exclusive with both `page` and `perPage` and is meant to be used with `limit` parameter. It will transform the pagination response.
+      required: false
+      explode: false
+      schema:
+        type: integer
+        default: 0
+    referenceKey:
+      name: referenceKey
+      in: query
+      description: Allow fetching products using its reference key
+      required: false
+      explode: false
+      schema:
+        type: string
+    pricePromotionKey:
+      name: pricePromotionKey
+      in: query
+      description: Adjust variant price based on the specified `pricePromotionKey`. If the variant does not have a matching price promotion, the default price is returned.
+      required: false
+      explode: false
+      schema:
+        type: string
+    productIds:
+      name: ids
+      in: query
+      description: Only include results with `productId` matching one of the specified `ids`, for example, `ids=1,2,3`.
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: integer
+    productsWith:
+      name: with
+      in: query
+      description: |
+        Include related product resources, for example, the attributes of a product can be included using `with=attributes` or `with=attributes:key(plusSize)`. Nested includes can be included with `with=variants.attributes`. Multiple includes are separated by commas `with=siblings,variants`.
+
+        with | includes
+        ------------ | -------------
+        attributes | see attributes filtering below
+        advancedAttributes | see attributes filtering below
+        variants | full variants
+        variants.\<include> | partial variants (see available includes for variants in /variants endpoint)
+        images | images (included by default)
+        images.attributes | see attributes filtering below
+        categories | categories
+        categories:hidden(true) | also include hidden categories
+        categories.countryLevelCustomData | include country custom data information
+        categories.shopLevelCustomData | include shop custom data information
+        categories.categoryProperties:name(property_name) | only return specified categoryProperties for included categories
+        definingAttributes | definingAttributes
+        siblings | sibling products
+        siblings.\<include> | partial sibling products (see available includes for products in /products endpoint)
+        priceRange | priceRange
+        lowestPriorPrice | lowestPriorPrice
+        reductionRange | reductionRange
+        searchCategoryIds | searchCategoryIds
+        baseCategories | baseCategories
+
+        filters for with=attributes, with=advancedAttributes and with=images.attributes | includes
+        ------------ | -------------
+        attributes | all attributes
+        attributes:key(\<key>&#124;\<key>&#124;...) | only attributes with specified keys
+        attributes:type(\<type>&#124;\<type>&#124;...) | only attributes with specified types
+
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    skipAvailabilityCheck:
+      name: skipAvailabilityCheck
+      in: query
+      description: |
+        This parameter allows disabling the availability check when adding an item into the wishlist or basket. This is needed to make sure that sold out products can be reserved via Click & Reserve in retail stores (where they are still available). Important – Check if this resource is available for your shop.
+      required: false
+      explode: false
+      schema:
+        type: boolean
+    sort:
+      name: sort
+      in: query
+      description: |
+        Sort results by specified `sort` type. When no sort is specified, results will be sorted by `productId`.
+
+        `sort` | `sortDir=asc` | `sortDir=desc`
+        ------------ | ------------- | -------------
+        price | results with lowest price first | results with highest price first (default)
+        reduction  | results with lowest reduction first | results with highest reduction first (default)
+        new | results with oldest creation date first | results with newest creation date first (default)
+        (none) | results with lowest productId first | results with highest productId first (default)
+      required: false
+      explode: false
+      schema:
+        type: string
+        enum:
+          - new
+          - price
+          - reduction
+    sortDir:
+      name: sortDir
+      in: query
+      description: Sort results in the specified direction (`asc` for ascending or `desc` for descending).
+      required: false
+      explode: false
+      schema:
+        type: string
+        enum:
+          - asc
+          - desc
+    sortingKey:
+      name: sortingKey
+      in: query
+      description: Ignore `sort` parameter and sort results by specified `sortingKey` instead.
+      required: false
+      explode: false
+      schema:
+        type: string
+    variantIds:
+      name: ids
+      in: query
+      description: Only include results with `variantId` matching one of the specified `ìds`, for example `ids=123,456,789`.
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: integer
+    variantsWith:
+      name: with
+      in: query
+      description: |
+        Include related variant resources, for example, the attributes of a variant can be included using `with=attributes` or `with=attributes:key(plusSize)`. Multiple includes are separated by commas `with=attributes,advancedAttributes`.
+
+        with | includes
+        ------------ | -------------
+        attributes | all attributes
+        attributes:key(\<key>,\<key>,...) | only attributes with specified keys
+        attributes:type(\<type>,\<type>,...) | only attributes with specified types
+        advancedAttributes | all advancedAttributes
+        advancedAttributes:key(\<key>,\<key>,...) | only advancedAttributes with specified keys
+        advancedAttributes:type(\<type>,\<type>,...) | only advancedAttributes with specified types
+        stock | include stock information (included by default)
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    filterAttributeId:
+      name: filters[attributeId]
+      in: query
+      description: |
+        You can only include results with the specified attribute value for the attribute parameter `attributeId`, e.g., `filters[550]=882`.
+        * You can use all attributes available on products as a filter using the parameter `with=attributes`.
+      required: false
+      explode: false
+      schema:
+        type: integer
+    filterAttributeKey:
+      name: filters[attributeKey]
+      in: query
+      description: |
+        Only include results with the specified attribute value for the attribute parameter `attributeKey`, e.g,: `filters[brand]=882`.
+        * All attributes available on the products via `with=attributes` might be used as a filter.
+      required: false
+      explode: false
+      schema:
+        type: string
+    negativeFilterAttributeKey:
+      name: filters:not[attributeKey]
+      in: query
+      description: |
+        Exclude results with the specified attribute value for the attribute parameter `attributeKey`, e.g,: `filters:not[brand]=882&filters:not[color]=549`.
+        * All attributes available on the products via `with=attributes` might be used as a filter exclusion.
+        * It can have multiple not filters (e.g. return me all products that are not red and not from Nike) in the query and multiple values for a single attribute(e.g. return me all products that are not red and not green) e.g,: `filters:not[color]=545,345`
+      required: false
+      explode: false
+      schema:
+        type: string
+    orFiltersOperator:
+      name: orFiltersOperator
+      in: query
+      description: |
+        It accepts comma separated attribute filters for OR logic.
+        * Can be used together with attribute filters
+        * Example: `?filters[attributeGroup1]=123&filters[attributeGroup2]=456,789&filters[attributeGroup3]=9&orFiltersOperator=attributeGroup2,attributeGroup3`
+        is equivalent of `attributeGroup1 AND (attributeGroup2 OR attributeGroup3)`
+      required: false
+      explode: false
+      schema:
+        type: string
+    filterCategory:
+      name: filters[category]
+      in: query
+      description: |
+        Filter the products which belong to a specific category.
+        * This filter is configured through the SCAYLE Panel, it is possible to assign a list of products to a given category, based on [predetermined criteria](../../../en/next/manual/scayle/commerce-suite/categories#filter) defined in the Panel.
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: integer
+    filterEan:
+      name: filters[ean]
+      in: query
+      description: |
+        Return a list of filters based only on the products matching to a specific `ean` value, e.g.: `filters[ean]=121213213`.
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    filterIsnew:
+      name: filters[isnew]
+      in: query
+      description: |
+        You can include only results for products with the specified `is_new` state.
+        * The `filters[isNew]=true` parameter only takes those products into consideration which are considered new.
+        * The `filters[isNew]=false`) parameter does not take new products into account.
+
+        __When is a product considered as `new`?__:
+
+        Products are considered "new" when they were inserted into the shop within a period of 28 days. This value can be adjusted accordingly for each shop.
+      required: false
+      explode: false
+      schema:
+        type: boolean
+    filterMaxPrice:
+      name: filters[maxPrice]
+      in: query
+      description: |
+        Only include results with a price less than or equal to `maxPrice`.
+
+        __Note__: The value is passed in a currency's fractional monetary unit (for example, 990 cents for 9,90 EUR).
+      required: false
+      explode: false
+      schema:
+        type: integer
+    filterMaxReduction:
+      name: filters[maxReduction]
+      in: query
+      description: |
+        Only include results with a sale reduction of less than or equal to `maxReduction` percent.
+        E.g.: `filters[maxReduction]=30`, for example, will include all products which have 30% or less reduction on the price.
+      required: false
+      explode: false
+      schema:
+        type: integer
+    filterMinPrice:
+      name: filters[minPrice]
+      in: query
+      description: |
+        You can include only results with a price greater than or equal to `minPrice`.
+
+        __Note__: The value is passed in a currency's fractional monetary unit (for example, 990 cents for 9,90 EUR).
+      required: false
+      explode: false
+      schema:
+        type: integer
+    filterMinReduction:
+      name: filters[minReduction]
+      in: query
+      description: |
+        Only include results with a sale reduction greater than or equal to `minReduction` percent.
+        `filters[minReduction]=10`, for example, will include all products which have at least 10% reduction on the price.
+      required: false
+      explode: false
+      schema:
+        type: integer
+    filterReferenceKey:
+      name: filters[referenceKey]
+      in: query
+      description: |
+        Only include results with the specified product's `referenceKey`,
+        An example would be `filters[referenceKey]=ESR0307001`.
+      required: false
+      explode: false
+      schema:
+        type: string
+    filterSale:
+      name: filters[sale]
+      in: query
+      description: |
+        You can include only results based on a product's `sale` state.
+        Products are considered as `sale` when:
+        * Any of its variants have a `sale` price on it.
+        * There is an activate campaign and the `campaignKey=px | <ACTUAL_CAMPAIGN_KEY>` is also provided.
+        `filters[sale]=true&campaignKey=px | <ACTUAL_CAMPAIGN_KEY>`, for example, will include results for both products with sale and campaign prices.
+      required: false
+      explode: false
+      schema:
+        type: boolean
+    filterHasCampaignReduction:
+      name: filters[hasCampaignReduction]
+      in: query
+      description: |
+        You can include only results based on a product's `hasCampaignReduction` state.
+        Products are considered as `hasCampaignReduction` when:
+        * Any of its variants have a prices with `hasCampaignReduction` on it.
+        * There is an activate campaign and the `campaignKey=px | <ACTUAL_CAMPAIGN_KEY>` is also provided.
+        `filters[hasCampaignReduction]=true&campaignKey=px | <ACTUAL_CAMPAIGN_KEY>`, for example, will include results for both products with hasCampaignReduction and campaign prices.
+      required: false
+      explode: false
+      schema:
+        type: boolean
+    filterStyleKey:
+      name: filters[styleKey]
+      in: query
+      description: |
+        Only include results matching one of the specified `styleKeys` (also known as `masterKeys`).
+
+        The `styleKeys` also define the `siblings` relation between products.
+
+        One example would be `filters[styleKey]=502227553-1`.
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    filterTerm:
+      name: filters[term]
+      in: query
+      description: |
+        Only take into account the result products in which the name or an attribute match a specific searched value, either fully or partially through the `term` filter, e.g., `filters[term]=blue shirts`.
+
+        __Note__: The attributes used for searching are [configured](../../../en/next/manual/scayle/product-configuration#create-new-attribute-groups) in the Panel.
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    filterMinFirstLiveAt:
+      name: filters[minFirstLiveAt]
+      in: query
+      description: |
+        Only include products which first appeared live after the provided value.
+
+        __Note__: The provided value shall be datetime in the RFC3339 format: "2020-10-13T00:00:00Z"
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    filterMaxFirstLiveAt:
+      name: filters[maxFirstLiveAt]
+      in: query
+      description: |
+        Only include products which first appeared live before the provided value.
+
+        __Note__: The provided value shall be datetime in the RFC3339 format: "2020-10-13T00:00:00Z"
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    filterMerchantId:
+      name: filters[merchantId]
+      in: query
+      description: |
+        Only include results with merchantId equal to `merchantId`.
+        An example would be `filters[merchantId]=130`.
+      required: false
+      explode: false
+      schema:
+        type: integer
+    includeItemsWithoutProductData:
+      name: includeItemsWithoutProductData
+      in: query
+      description: If `includeItemsWithoutProductData` is set to true, basket items will be included even if there is no product information available (`items.product` and `items.variant` might be empty).
+      required: false
+      explode: false
+      schema:
+        type: boolean
+    brandIds:
+      name: ids
+      in: query
+      description: Only include results with `brandId` matching one of the specified `ìds`, for example `ids=1,4,5`.
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: integer
+    brandSlugs:
+      name: slugs
+      in: query
+      description: Only include results with `brandSlug` matching one of the specified `slugs`, for example `slugs=puma,nike`.
+      required: false
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+  examples:
+    BrandsResponseListing:
+      value:
+        entities:
+          - id: 21
+            name: 'About You'
+            slug: 'aboutyou'
+            group: 'default'
+            isActive: true
+            logoHash: '01dfae6e5d4d90d9892622325959afbe'
+            createdAt: '2019-04-17 16:05:36'
+            updatedAt: '2019-04-17 16:05:36'
+            indexedAt: '2023-04-26 16:05:36'
+          - id: 22
+            name: 'Edited'
+            slug: 'edited'
+            group: 'default'
+            externalReference: '0815'
+            isActive: true
+            logoHash: '8743b52063cd84097a65d1633f5c74f5'
+            createdAt: '2019-04-17 16:05:36'
+            updatedAt: '2019-04-17 16:05:36'
+            indexedAt: '2023-04-26 16:05:36'
+        pagination:
+          current: 2
+          first: 1
+          last: 49
+          next: 2
+          page: 1
+          perPage: 2
+          prev: 1
+          total: 4879
