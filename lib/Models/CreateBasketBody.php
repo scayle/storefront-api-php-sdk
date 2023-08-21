@@ -11,6 +11,7 @@ namespace Scayle\StorefrontApi\Models;
  * @property int $shopId If you are operating multiple shops (for example, for different domain names or different languages), each shop is identified by its specific `shopId`.
 
  * @property int $variantId The variant to be added to the basket. This is the only required parameter.
+ * @property array $itemGroup 
  */
 class CreateBasketBody extends ApiObject
 {

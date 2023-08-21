@@ -24,5 +24,6 @@ class ServiceFactory extends AbstractServiceFactory
         'variants' => \Scayle\StorefrontApi\Services\VariantService::class,
         'wishlists' => \Scayle\StorefrontApi\Services\WishlistService::class,
         'baskets' => \Scayle\StorefrontApi\Services\BasketService::class,
+        'redirects' => \Scayle\StorefrontApi\Services\RedirectService::class,
     ];
 }

@@ -20,6 +20,7 @@ use Scayle\StorefrontApi\Services\ServiceFactory;
  * @property \Scayle\StorefrontApi\Services\VariantService $variants
  * @property \Scayle\StorefrontApi\Services\WishlistService $wishlists
  * @property \Scayle\StorefrontApi\Services\BasketService $baskets
+ * @property \Scayle\StorefrontApi\Services\RedirectService $redirects
  */
 class StorefrontClient extends AbstractApi
 {

@@ -4,7 +4,7 @@ namespace Scayle\StorefrontApi\Models;
 
 /**
  * @property int $id 
- * @property string[] $assets 
+ * @property array $assets 
  * @property string $name 
  * @property string $type 
  * @property string $visibleFrom 

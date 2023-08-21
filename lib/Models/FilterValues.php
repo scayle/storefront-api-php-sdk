@@ -3,14 +3,8 @@
 namespace Scayle\StorefrontApi\Models;
 
 /**
- * @property int $id 
- * @property string $name 
- * @property string $slug short text to describe the current category (usable, for example, in URLs as `fashion`).
- * @property string $attributeGroupType 
- * @property string $type 
- * @property FilterValues $values 
  */
-class Filter extends ApiObject
+class FilterValues extends ApiObject
 {
     protected $defaultValues = [
         

@@ -3,14 +3,10 @@
 namespace Scayle\StorefrontApi\Models;
 
 /**
- * @property int $id 
- * @property string $name 
- * @property string $slug short text to describe the current category (usable, for example, in URLs as `fashion`).
- * @property string $attributeGroupType 
- * @property string $type 
- * @property FilterValues $values 
+ * @property Redirect[] $entities 
+ * @property Pagination|OffsetPagination $pagination 
  */
-class Filter extends ApiObject
+class RedirectsResponse extends ApiObject
 {
     protected $defaultValues = [
         

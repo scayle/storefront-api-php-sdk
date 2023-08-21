@@ -316,7 +316,6 @@ paths:
         - $ref: '#/components/parameters/negativeFilterAttributeKey'
         - $ref: '#/components/parameters/orFiltersOperator'
         - $ref: '#/components/parameters/filterCategory'
-        - $ref: '#/components/parameters/filterCategoryPath'
         - $ref: '#/components/parameters/filterEan'
         - $ref: '#/components/parameters/filterIsnew'
         - $ref: '#/components/parameters/filterMaxPrice'
@@ -796,6 +795,15 @@ paths:
           schema:
             type: string
             example: Hosen schwarz
+        - name: categoryId
+          in: query
+          description: The categoryId parameter is used to filter the results and limit the returned data to items
+            that belong to the specified category or its child categories.
+          required: false
+          explode: false
+          schema:
+            type: integer
+            example: 20201
       responses:
         '200':
           description: successful operation
@@ -812,6 +820,9 @@ paths:
           description: authentication failed
         '400':
           description: term not provided
+        '422':
+          description: formal validation failure (see schema)
+
   /v1/typeahead:
     get:
       tags:
@@ -892,6 +903,15 @@ paths:
           schema:
             type: integer
             example: 3
+        - name: categoryId
+          in: query
+          description: The categoryId parameter is used to filter the results and limit the returned data to items
+            that belong to the specified category or its child categories.
+          required: false
+          explode: false
+          schema:
+            type: integer
+            example: 20201
       responses:
         '200':
           description: successful operation
@@ -927,6 +947,8 @@ paths:
                         example: "brandOrCategory"
         '401':
           description: authentication failed
+        '400':
+          description: required query parameter missing / query parameter invalid
     post:
       tags:
         - search
@@ -1006,6 +1028,15 @@ paths:
           schema:
             type: integer
             example: 3
+        - name: categoryId
+          in: query
+          description: The categoryId parameter is used to filter the results and limit the returned data to items
+           that belong to the specified category or its child categories.
+          required: false
+          explode: false
+          schema:
+           type: integer
+           example: 20201
       requestBody:
         content:
           application/json:
@@ -1066,6 +1097,8 @@ paths:
                         example: "brandOrCategory"
         '401':
           description: authentication failed
+        '400':
+          description: required query parameter missing / query parameter invalid
   /v1/filters:
     get:
       tags:
@@ -1816,20 +1849,15 @@ paths:
     post:
       tags:
         - redirects
-      summary: Get redirect
+      summary: Match redirect
       description: |
-        Get redirect for URL
+        Matches a redirect for a given URL
+      operationId: match-redirects
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                url:
-                  type: string
-                  example: example.com
-                  description: |
-                    The url to find a redirect for
+              $ref: '#/components/schemas/MatchRedirectBody'
       responses:
         '200':
           description: request successful
@@ -2438,6 +2466,7 @@ components:
                   - type: number
                   - type: object
                   - type: array
+                    items: {}
                 nullable: true
                 example: "3"
         rootlineIds:
@@ -2598,6 +2627,24 @@ components:
         variantId:
           type: integer
           description: The variant to be added to the basket. This is the only required parameter.
+        itemGroup:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The common ID for the item group between all items in the basket items.
+            isMainItem:
+              type: boolean
+              description: |
+                Whether or not the current item is the main item within the item group.
+                This property can be used for display purposes to only show the main item within the basket/checkout.
+            isRequired:
+              type: boolean
+              description: |
+                Whether or not the item is required to be present for the item group.
+                When you delete an item from your basket which is required for the item group,
+                all other items assigned to the item group will also be deleted.
+
     Cost:
       type: object
       properties:
@@ -2639,6 +2686,20 @@ components:
         value:
           type: string
           nullable: true
+    FilterValues:
+      oneOf:
+        - type: array
+          items:
+            $ref: '#/components/schemas/AttributeFilterValue'
+        - type: array
+          items:
+            $ref: '#/components/schemas/BooleanFilterValue'
+        - type: array
+          items:
+            $ref: '#/components/schemas/RangeFilterValue'
+        - type: array
+          items:
+            $ref: '#/components/schemas/IdentifierFilterValue'
     Filter:
       type: object
       properties:
@@ -2660,19 +2721,7 @@ components:
           type: string
           example: "range"
         values:
-          oneOf:
-            - type: array
-              items:
-                $ref: '#/components/schemas/AttributeFilterValue'
-            - type: array
-              items:
-                $ref: '#/components/schemas/BooleanFilterValue'
-            - type: array
-              items:
-                $ref: '#/components/schemas/RangeFilterValue'
-            - type: array
-              items:
-                $ref: '#/components/schemas/IdentifierFilterValue'
+          $ref: '#/components/schemas/FilterValues'
       x-ayModels:
         - property: values
           discriminatedBy: type
@@ -2700,15 +2749,6 @@ components:
           path: filters
           responseModel: Filter
           isResponseCollection: true
-        - methodName: getValues
-          operation: get
-          operationId: fetch-filter-by-group
-          path: filters/{groupName}/values
-          responseModel: Filter
-          isResponseCollection: true
-          parameters:
-            - name: groupName
-              type: string
     AttributeFilterValue:
       type: object
       properties:
@@ -2862,13 +2902,6 @@ components:
           example: 10
         customData:
           type: object
-          properties:
-            prices:
-              type: integer
-            newField1:
-              type: integer
-            newField2:
-              type: object
         start_at:
           type: string
           example: "2021-04-13T08:45:00+00:00"
@@ -3033,9 +3066,7 @@ components:
         id:
           type: integer
         assets:
-          type: array
-          items:
-            type: string
+          type: object
         name:
           type: string
           items:
@@ -3793,6 +3824,28 @@ components:
         - property: packages
           isCollection: true
           className: Package
+
+    MatchRedirectBody:
+      type: object
+      properties:
+        url:
+          type: string
+          example: example.com
+          description: |
+            The url to find a redirect for
+
+    RedirectsResponse:
+      type: object
+      properties:
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Redirect'
+        pagination:
+          oneOf:
+            - $ref: '#/components/schemas/Pagination'
+            - $ref: '#/components/schemas/OffsetPagination'
+
     Redirect:
       type: object
       properties:
@@ -3811,6 +3864,19 @@ components:
           type: integer
           description: The the status code for the redirect
           example: 301
+      x-ayOperations:
+        - methodName: match
+          operation: post
+          operationId: match-redirects
+          path: redirects
+          requestModel: MatchRedirectBody
+          responseModel: Redirect
+        - methodName: get
+          operation: get
+          operationId: fetch-redirects
+          path: redirects
+          responseModel: RedirectsResponse
+
   parameters:
     locale:
       name: locale
