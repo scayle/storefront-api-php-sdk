@@ -3,11 +3,8 @@
 namespace Scayle\StorefrontApi\Models;
 
 /**
- * @property int $id
- * @property string $key
- * @property string $label
- * @property string $type
- * @property array $values
+ * @property int $absoluteWithTax
+ * @property int $relative
  */
 class AppliedReductionAmount extends ApiObject
 {
