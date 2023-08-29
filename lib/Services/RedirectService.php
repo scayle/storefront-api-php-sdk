@@ -19,7 +19,7 @@ class RedirectService extends AbstractService
      * @throws ClientExceptionInterface
      * @throws ApiErrorException
 	 */
-	 public function match(, $model, $options = [])
+	 public function match($model, $options = [])
 	 {
          $combinedOptions = $options;
 
