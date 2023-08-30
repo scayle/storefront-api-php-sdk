@@ -14,7 +14,6 @@ class AppliedReduction extends ApiObject
     ];
 
     protected $classMap = [
-		'amount' => \Scayle\StorefrontApi\Models\AppliedReductionAmount::class,
     ];
 
     protected $collectionClassMap = [

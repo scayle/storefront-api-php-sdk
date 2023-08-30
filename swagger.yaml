@@ -92,27 +92,11 @@ paths:
         - variants
       summary: Display a list of variants
       description: |
-        Get multiple variants, either by specifying search criteria/filters or variant IDs.
-
-        There are two basic ways to use this endpoint: You can either search for variants by specifying search/filter parameters or directly fetch known variants by their [variant IDs](../../../en/glossary#variant-id).
-
-        ***
-
-        __Searching for variants__
-
-        The various `filter` parameters can be used to restrict the list of variants included in the response (see available parameters below).
-
-        You can also use the `/v1/filters` endpoint to determine which filters are available in the current context. This way, you can, for example, enable users to narrow down general variant lists to very specific results by incrementally adding more and more filter parameters.
-
-        The `minProductId`, `includeSellableForFree`, and `includeSoldOut` parameters can further restrict or expand the search results (see below).
-
-        ***
+        Retrieve multiple variants by their variant IDs.
 
         __Fetching variants by variant ID__
 
         To fetch a list of known variants, simply specify them by variant ID using the `ids` parameter, for example, `/v1/variants?ids=1,2,3`.
-
-        If you specify the `ids` parameter, all other search/filter parameters will be ignored.
 
         ***
 
@@ -129,45 +113,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/variantIds'
         - $ref: '#/components/parameters/campaignKey'
-        - $ref: '#/components/parameters/includeSellableForFree'
-        - $ref: '#/components/parameters/includeSoldOut'
-        - $ref: '#/components/parameters/minProductId'
-        - $ref: '#/components/parameters/sortingKey'
-        - $ref: '#/components/parameters/filterAttributeId'
-        - $ref: '#/components/parameters/filterAttributeKey'
-        - $ref: '#/components/parameters/orFiltersOperator'
-        - $ref: '#/components/parameters/filterCategory'
-        - $ref: '#/components/parameters/filterEan'
-        - $ref: '#/components/parameters/filterIsnew'
-        - $ref: '#/components/parameters/filterMaxPrice'
-        - $ref: '#/components/parameters/filterMaxReduction'
-        - $ref: '#/components/parameters/filterMinPrice'
-        - $ref: '#/components/parameters/filterMinReduction'
-        - $ref: '#/components/parameters/filterReferenceKey'
-        - $ref: '#/components/parameters/filterSale'
-        - $ref: '#/components/parameters/filterStyleKey'
-        - $ref: '#/components/parameters/filterTerm'
-        - $ref: '#/components/parameters/filterMerchantId'
-        - $ref: '#/components/parameters/sort'
-        - $ref: '#/components/parameters/sortDir'
-        - name: hideSoldOutVariants
-          in: query
-          description: Only return results with available stock quantity (`stock > 0`).
-          required: false
-          explode: false
-          schema:
-            type: boolean
-            default: false
-        - name: greaterThan
-          in: query
-          description: Only return results with an available stock quantity greater than or equal to the specified `greaterThan` quantity.
-          required: false
-          explode: false
-          schema:
-            type: integer
         - $ref: '#/components/parameters/variantsWith'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/perPage'
       responses:
         '200':
           description: successful operation
@@ -814,7 +760,6 @@ paths:
                 properties:
                   matches:
                     items:
-                      type: object
                       $ref: '#/components/schemas/ResolveMatch'
         '401':
           description: authentication failed
@@ -1755,9 +1700,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BrandsResponse'
-              examples:
-                Brand Listing Example:
-                  $ref: '#/components/examples/BrandsResponseListing'
+
   /v1/brands/{brandId}:
     get:
       tags:
@@ -1995,9 +1938,6 @@ components:
         type:
           type: string
           example: relative
-      x-ayObjects:
-        - property: amount
-          className: AppliedReductionAmount
     WishlistItem:
       type: object
       required:
@@ -2210,7 +2150,7 @@ components:
         name:
           type: string
         customData:
-          $ref: '#/components/schemas/BrandCustomData'
+          type: object
           description: Arbitrary custom data object to be added to the brand.
         externalReference:
           type: string
@@ -2256,42 +2196,6 @@ components:
           parameters:
             - name: brandId
               type: integer
-      example:
-        id: 21
-        customData:
-          floatData: 9.8
-          localizedJson: []
-          localizedString: []
-          nonLocalizedJson:
-          nonLocalizedString: test
-        externalReference: ''
-        group: default
-        isActive: true
-        logoHash: ''
-        createdAt: '2018-01-20T09:30:15+00:00'
-        updatedAt: '2018-01-20T09:30:15+00:00'
-        indexedAt: '2023-04-26T09:30:15+00:00'
-    BrandCustomData:
-      type: object
-      properties:
-        floatData:
-          type: number
-        localizedJson:
-          type: array
-          items:
-            type: object
-        localizedString:
-          type: array
-          items:
-            type: object
-        nonLocalizedJson:
-          type: string
-        nonLocalizedString:
-          type: string
-      example:
-        localizedJson:
-          - key1: value1
-        localizedString: keyValue
     BrandsResponse:
       type: object
       properties:
@@ -2307,45 +2211,6 @@ components:
         - property: entities
           className: Brand
           isCollection: true
-      example:
-        entities:
-          - id: 21
-            customData:
-              floatData: 9.8
-              localizedJson: []
-              localizedString: []
-              nonLocalizedJson:
-              nonLocalizedString: test
-            externalReference: ''
-            group: default
-            isActive: true
-            logoHash: ''
-            createdAt: '2018-06-01 14:56:08'
-            updatedAt: '2020-06-05 09:11:25'
-            indexedAt: '2023-04-26 09:11:25'
-          - id: 22
-            customData:
-              floatData: 12
-              localizedJson: []
-              localizedString: []
-              nonLocalizedJson:
-              nonLocalizedString: ''
-            externalReference: ''
-            group: default
-            isActive: true
-            logoHash: ''
-            createdAt: '2018-06-01 14:56:08'
-            updatedAt: '2020-06-05 09:11:25'
-            indexedAt: '2023-04-26 09:11:25'
-        pagination:
-          current: 100
-          first: 1
-          last: 49
-          next: 2
-          page: 1
-          perPage: 100
-          prev: 1
-          total: 4879
 
     BrandOrCategorySuggestion:
       type: object
@@ -2489,26 +2354,8 @@ components:
               - "pattern"
         shopLevelCustomData:
           type: object
-          properties:
-            appCatName:
-              type: object
-            appCatLocalizedConfig:
-              type: object
         countryLevelCustomData:
           type: object
-          properties:
-            appCatCountryName:
-              type: string
-            appCatCountryScore:
-              type: number
-            appCatCountryBubbleUp:
-              type: boolean
-            appCatCountrySampleName:
-              type: string
-            appCatCountrySampleConfig:
-              type: object
-            appCatCountryLocalizedConfig:
-              type: object
       x-ayObjects:
         - property: parent
           className: Category
@@ -4487,35 +4334,3 @@ components:
         type: array
         items:
           type: string
-  examples:
-    BrandsResponseListing:
-      value:
-        entities:
-          - id: 21
-            name: 'About You'
-            slug: 'aboutyou'
-            group: 'default'
-            isActive: true
-            logoHash: '01dfae6e5d4d90d9892622325959afbe'
-            createdAt: '2019-04-17 16:05:36'
-            updatedAt: '2019-04-17 16:05:36'
-            indexedAt: '2023-04-26 16:05:36'
-          - id: 22
-            name: 'Edited'
-            slug: 'edited'
-            group: 'default'
-            externalReference: '0815'
-            isActive: true
-            logoHash: '8743b52063cd84097a65d1633f5c74f5'
-            createdAt: '2019-04-17 16:05:36'
-            updatedAt: '2019-04-17 16:05:36'
-            indexedAt: '2023-04-26 16:05:36'
-        pagination:
-          current: 2
-          first: 1
-          last: 49
-          next: 2
-          page: 1
-          perPage: 2
-          prev: 1
-          total: 4879
