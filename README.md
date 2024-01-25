@@ -18,7 +18,7 @@
 
 ## Getting Started
 
-Visit the [Quickstart Guide](https://scayle.dev/en/dev/admin-api/sdk-setup) to set up the Storefront API PHP SDK
+Visit the [Quickstart Guide](https://scayle.dev/en/dev/storefront-api/sdk-setup) to set up the Storefront API PHP SDK
 
 Visit the [Docs](https://scayle.dev) to learn more about our system requirements.
 
@@ -31,7 +31,7 @@ composer require scayle/storefront-api
 
 [SCAYLE](https://scayle.com) is a full-featured e-commerce software solution that comes with flexible APIs. Within SCAYLE, you can manage all aspects of your shop, such as products, stocks, customers, and transactions.
 
-Learn more about [Scayles’s architecture]() and [commerce modules]() in the Docs.
+Learn more about [Scayles’s architecture](https://scayle.dev/en/dev/getting-started/introduction) and [commerce modules](https://scayle.dev/en/dev/getting-started/introduction) in the Docs.
 
 
 
