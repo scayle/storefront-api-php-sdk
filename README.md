@@ -37,11 +37,11 @@ Learn more about [Scayles’s architecture]() and [commerce modules]() in the Do
 
 ##  Community
 
-The community and core teams are available in [GitHub Discussions](https://github.com/Benjamin-Neske-SCAYLE/Readme-Template/discussions), where you can ask for support, discuss roadmap, and share ideas.
+The community and core teams are available in [GitHub Discussions](https://github.com/scayle/storefront-api-php-sdk/discussions), where you can ask for support, discuss roadmap, and share ideas.
 
 ## Other channels
 
-- [GitHub Issues](https://github.com/Benjamin-Neske-SCAYLE/Readme-Template/issues)
+- [GitHub Issues](https://github.com/scayle/storefront-api-php-sdk/issues)
 - [LinkedIn](https://www.linkedin.com/company/scaylecommerce/)
 - [Jobs](https://careers.smartrecruiters.com/ABOUTYOUGmbH/scayle)
 - [AboutYou Tech Blog](https://aboutyou.tech/)
